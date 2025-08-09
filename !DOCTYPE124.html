@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyez</title>
+  <meta name="description" content="Lyez — твой портал в Steam, CSSTATS и Telegram." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <style>
+    body {
+      margin: 0;
+      background: #0d0d0d;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    body.loaded { opacity: 1; }
+    .blur { filter: blur(4px); transition: filter 0.4s ease; }
+
+    .logo {
+      font-size: 4rem; font-weight: bold; color: #fff;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+      animation: glitch 1s infinite; cursor: pointer;
+      user-select: none; text-align: center; margin-top: 100px;
+    }
+    @keyframes glitch {
+      0%,100% { transform: rotate(0deg); }
+      25% { transform: rotate(1deg); }
+      50% { transform: rotate(-1deg); }
+      75% { transform: rotate(1deg); }
+    }
+    .buttons {
+      margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn {
+      background: #1a1a1a; color: #00ffff; border: 1px solid #00ffff;
+      padding: 10px 20px; border-radius: 8px; text-decoration: none;
+      font-size: 1rem; transition: background 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      background: #00ffff; color: #000; transform: scale(1.05);
+    }
+    .telegram {
+      margin-top: 20px; opacity: 0; transform: translateY(-10px); pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease; text-align: center;
+    }
+    .telegram.visible {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+    footer {
+      position: absolute; bottom: 10px; font-size: 0.9rem; color: #666;
+      width: 100%; text-align: center;
+    }
+    @media (max-width: 600px) {
+      .logo { font-size: 2.5rem; }
+      .btn { font-size: 0.9rem; padding: 8px 16px; }
+    }
+    /* Бургер-меню */
+    .burger {
+      position: absolute; top: 20px; right: 20px; width: 30px; height: 24px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer; z-index: 1001;
+    }
+    .burger span {
+      display: block; height: 4px; background: #00ffff; border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    .burger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .burger.active span:nth-child(2) { opacity: 0; }
+    .burger.active span:nth-child(3) { transform: rotate(-45deg) translate(6px, -6px); }
+
+    /* Меню */
+    .menu {
+      position: fixed; top: 0; right: -100%; width: 250px; height: 100%;
+      background: rgba(13, 13, 13, 0.95); backdrop-filter: blur(8px);
+      box-shadow: -2px 0 10px rgba(0, 255, 255, 0.2);
+      transition: right 0.4s ease; z-index: 1000;
+      padding: 60px 20px; display: flex; flex-direction: column; gap: 20px;
+    }
+    .menu.active { right: 0; }
+    .menu a, .menu button {
+      color: #00ffff; text-decoration: none; font-size: 1.2rem;
+      transition: color 0.3s; background: none; border: none;
+      text-align: left; cursor: pointer; padding: 0; font-family: inherit;
+    }
+    .menu a:hover, .menu button:hover { color: #fff; }
+
+    /* Подменю с анимацией */
+    .submenu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-left: 15px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease, opacity 0.5s ease;
+      opacity: 0;
+    }
+
+    .submenu a {
+      font-size: 0.95rem;
+      border-left: 2px solid #00ffff;
+      padding-left: 8px;
+      color: #9ff;
+      transform: translateX(-8px);
+      opacity: 0;
+    }
+
+    .submenu.show {
+      max-height: 200px;
+      opacity: 1;
+    }
+
+    .submenu.show a {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .submenu.show a:nth-child(1) {
+      transition: transform 0.3s ease 0.05s, opacity 0.3s ease 0.05s;
+    }
+    .submenu.show a:nth-child(2) {
+      transition: transform 0.
+
+
+3s ease 0.15s, opacity 0.3s ease 0.15s;
+    }
+  </style>
+</head>
+<body>
+  <div class="burger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+
+  <div class="menu" id="menu">
+    <a href="https://steamcommunity.com/profiles/76561199467928180/" target="_blank">🎮 Steam</a>
+    <a href="https://csstats.gg/ru-RU/player/76561199467928180" target="_blank">📊 CSSTATS</a>
+    <a href="https://t.me/Egirz" target="_blank">💬 Telegram</a>
+    <button onclick="showCrosshair()">🎯 My Crosshair</button>
+<button onclick="showPCSpecs()">🖥️ My PC</button>
+
+    <!-- Поддержка с анимацией -->
+    <button onclick="toggleSubmenu()">💎 Поддержать Lyez</button>
+    <div class="submenu" id="supportSubmenu">
+      <a href="https://steamcommunity.com/tradeoffer/new/?partner=1507662452&token=ok2iAkM5" target="_blank">Trade</a>
+      <a href="tel:+79298296661">My number for donate</a>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="logo" onclick="toggleTelegram()">Lyez</div>
+    <div class="buttons">
+      <a class="btn" href="https://steamcommunity.com/profiles/76561199467928180/" target="_blank">🎮 Steam</a>
+      <a class="btn" href="https://csstats.gg/ru-RU/player/76561199467928180" target="_blank">📊 CSSTATS</a>
+    </div>
+    <div class="telegram" id="telegram">
+      <a class="btn" href="https://t.me/Egirz" target="_blank">💬 Telegram</a>
+    </div>
+    <footer>© 2025 Lyez</footer>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      document.body.classList.add('loaded');
+    });
+    function toggleTelegram() {
+      document.getElementById('telegram').classList.toggle('visible');
+    }
+    function toggleMenu() {
+      document.querySelector('.burger').classList.toggle('active');
+      document.getElementById('menu').classList.toggle('active');
+      document.getElementById('main').classList.toggle('blur');
+    }
+    function toggleSubmenu() {
+      document.getElementById('supportSubmenu').classList.toggle('show');
+    }
+    function showModal(content) {
+  document.getElementById("modalContent").innerText = content;
+  document.getElementById("modalOverlay").style.display = "block";
+  document.getElementById("modalBox").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("modalBox").style.display = "none";
+}
+
+function showCrosshair() {
+  const crosshairCode = "463рво";
+  navigator.clipboard.writeText(crosshairCode)
+    .then(() => {
+      showModal(`Код прицела: ${crosshairCode}\n(скопировано в буфер обмена)`);
+    })
+    .catch(() => {
+      showModal("Не удалось скопировать код.");
+    });
+}
+
+function showPCSpecs() {
+  const specs = `🖥 Мой ПК:
+• Процессор: AMD Ryzen 5 5600X
+• Видеокарта: NVIDIA RTX 3060 Ti
+• ОЗУ: 16GB DDR4
+• SSD: 1TB NVMe
+• ОС: Windows 11 Pro`;
+  showModal(specs);
+}
+  </script>
+<div id="modalOverlay" onclick="closeModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000;"></div>
+
+<div id="modalBox" style="
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:#1a1a1a;
+  color:#00ffff;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 20px #00ffff;
+  z-index:2001;
+  max-width:90%;
+  width:300px;
+  text-align:center;
+  font-family:'Segoe UI', sans-serif;
+  animation: fadeIn 0.4s ease;
+">
+  <div id="modalContent" style="white-space:pre-line; margin-bottom:15px;"></div>
+  <button onclick="closeModal()" style="
+    background:#00ffff;
+    color:#000;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+  ">Закрыть</button>
+</div>
+
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+  }
+</style>
+</body>
+</html>
