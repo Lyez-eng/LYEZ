@@ -251,7 +251,7 @@ function showConfig() {
       showModal(`${phone}\n${bank}\n\n(Could not copy)`);
     });
 }
-    function showPhoneCard() {
+    unction showPhoneCard() {
   const phone = "+79298296661";
   const bank = "Т-Банк";
   const card = document.getElementById("phoneCard");
@@ -260,7 +260,7 @@ function showConfig() {
     card.innerHTML = `
       <h2>${bank}</h2>
       <p>${phone}</p>
-      <div class="copied">📋 Скопировано!</div>
+      <div class="copied">📋 Copied!</div>
     `;
     card.classList.remove("hide");
     card.classList.add("show");
@@ -407,6 +407,7 @@ function showConfig() {
 </style>
 </body>
 </html>
+
 
 
 
