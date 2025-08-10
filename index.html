@@ -194,7 +194,7 @@ function showCrosshair() {
   const crosshairCode = "CSGO-k6ZJJ-nxVr6-YRyKy-spG5o-aK6FP";
   navigator.clipboard.writeText(crosshairCode)
     .then(() => {
-      showModal(`Код прицела: ${crosshairCode}\n(скопировано в буфер обмена)`);
+      showModal(`Код прицела: ${crosshairCode}\n(скопировано ✅)`);
     })
     .catch(() => {
       showModal("Не удалось скопировать код.");
@@ -225,7 +225,7 @@ function closeConfig() {
 function downloadConfig() {
   const link = document.createElement("a");
   link.href = "https://lyez-eng.github.io/LYEZ/files/cfg.zip"; // замени на свой путь
-  link.download = "my_config.cfg";
+  link.download = "cfg.zip";
   link.click();
 }
 function showDonateModal() {
@@ -399,6 +399,7 @@ function copyDonateNumber() {
 </div>
 </body>
 </html>
+
 
 
 
