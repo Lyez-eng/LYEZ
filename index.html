@@ -132,7 +132,6 @@
   </style>
 </head>
 <body>
-  <div id="phoneCard"></div>
   <div class="burger" onclick="toggleMenu()">
     <span></span><span></span><span></span>
   </div>
@@ -143,13 +142,13 @@
     <a href="https://t.me/Egirz" target="_blank">💬 Telegram</a>
     <button onclick="showCrosshair()">🎯 My Crosshair</button>
     <button onclick="showPCSpecs()">🖥️ My PC</button>
-    <button onclick="showConfig()">🛠  My Config</button>
+    <button onclick="showConfig()">🛠️ My config</button>
 
     <!-- Поддержка с анимацией -->
     <button onclick="toggleSubmenu()">💎 Поддержать</button>
     <div class="submenu" id="supportSubmenu">
       <a href="https://steamcommunity.com/tradeoffer/new/?partner=1507662452&token=ok2iAkM5" target="_blank">Trade</a>
-      <button onclick="showPhone()">My number for donate</button>
+      <a href="#" onclick="showDonateModal()">My number for donate</a>
     </div>
   </div>
 
@@ -216,63 +215,87 @@ function showPCSpecs() {
   showModal(specs);
 }
 function showConfig() {
-  const configText = "My Config For CS2";
-  document.getElementById("modalContent").innerHTML = `
-    <div style="margin-bottom:15px;">${configText}</div>
-    <a href="https://lyez-eng.github.io/LYEZ/files/cfg.zip" download onclick="showDownloadNotification()" style="
-      display:inline-block;
-      background:#00ffff;
-      color:#000;
-      padding:8px 16px;
-      border-radius:6px;
-      font-weight:bold;
-      text-decoration:none;
-      margin-bottom:10px;
-    ">Download</a><br>
-  `;
-  document.getElementById("modalOverlay").style.display = "block";
-  document.getElementById("modalBox").style.display = "block";
+  document.getElementById("configModal").style.display = "block";
 }
-    function showDownloadNotification() {
-  const note = document.getElementById("downloadNotification");
-  note.classList.add("show");
-  setTimeout(() => {
-    note.classList.remove("show");
-  }, 3000);
-}
-    unction showPhone() {
-  const phone = "+79298296661";
-  const bank = "Т-Банк";
-  navigator.clipboard.writeText(phone)
-    .then(() => {
-      showModal(`${phone}\n${bank}\n\n(Copied to clipboard)`);
-    })
-    .catch(() => {
-      showModal(`${phone}\n${bank}\n\n(Could not copy)`);
-    });
-}
-    unction showPhoneCard() {
-  const phone = "+79298296661";
-  const bank = "Т-Банк";
-  const card = document.getElementById("phoneCard");
 
-  navigator.clipboard.writeText(phone).then(() => {
-    card.innerHTML = `
-      <h2>${bank}</h2>
-      <p>${phone}</p>
-      <div class="copied">📋 Copied!</div>
-    `;
-    card.classList.remove("hide");
-    card.classList.add("show");
+function closeConfig() {
+  document.getElementById("configModal").style.display = "none";
+}
 
+function downloadConfig() {
+  const link = document.createElement("a");
+  link.href = "https://lyez-eng.github.io/LYEZ/files/cfg.zip"; // замени на свой путь
+  link.download = "my_config.cfg";
+  link.click();
+}
+function showDonateModal() {
+  document.getElementById("donateModal").style.display = "block";
+}
+
+function closeDonateModal() {
+  document.getElementById("donateModal").style.display = "none";
+}
+
+function copyDonateNumber() {
+  const number = "79298296661";
+  const icon = document.getElementById("copyIcon");
+  const copiedText = document.getElementById("copiedText");
+  const container = document.getElementById("cardContainer");
+
+  navigator.clipboard.writeText(number).then(() => {
+    icon.textContent = "✅";
+    copiedText.style.opacity = "1";
+    copiedText.style.transform = "translateY(0)";
     setTimeout(() => {
-      card.classList.remove("show");
-      card.classList.add("hide");
-    }, 3000);
+      icon.textContent = "📋";
+      copiedText.style.opacity = "0";
+      copiedText.style.transform = "translateY(10px)";
+    }, 2000);
   });
 }
   </script>
 <div id="modalOverlay" onclick="closeModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000;"></div>
+
+<div id="configModal" style="
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:#1a1a1a;
+  color:#00ffff;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 20px #00ffff;
+  z-index:2001;
+  max-width:90%;
+  width:300px;
+  text-align:center;
+  font-family:'Segoe UI', sans-serif;
+  animation: fadeIn 0.4s ease;
+">
+  <h2 style="margin-top:0;">MY CFG</h2>
+  <button onclick="downloadConfig()" style="
+    background:#00ffff;
+    color:#000;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    margin-bottom:10px;
+  ">Download</button>
+  <br>
+  <button onclick="closeConfig()" style="
+    background:#00ffff;
+    color:#000;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+  ">Закрыть</button>
+</div>
 
 <div id="modalBox" style="
   display:none;
@@ -303,110 +326,80 @@ function showConfig() {
     font-weight:bold;
   ">Закрыть</button>
 </div>
-  <div id="downloadNotification" style="
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #4CAF50;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: 3000;
-  font-family: 'Segoe UI', sans-serif;
-">✅ File downloaded</div>
 
 <style>
-  #downloadNotification.show {
-  opacity: 1;
-}
   @keyframes fadeIn {
     from { opacity: 0; transform: translate(-50%, -60%); }
     to { opacity: 1; transform: translate(-50%, -50%); }
   }
-  #phoneCard {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #2c3e50, #34495e);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  font-family: 'Segoe UI', sans-serif;
-  text-align: center;
-  z-index: 9999;
-  display: none;
-}
-
-#phoneCard h2 {
-  margin: 0 0 10px;
-  font-size: 20px;
-}
-
-#phoneCard p {
-  margin: 5px 0;
-  font-size: 18px;
-}
-
-#phoneCard .copied {
-  font-size: 14px;
-  color: #bdc3c7;
-  margin-top: 10px;
-}
-  @keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-@keyframes fadeOutScale {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-}
-
-#phoneCard {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #2c3e50, #34495e);
-  color: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  font-family: 'Segoe UI', sans-serif;
-  text-align: center;
-  z-index: 9999;
-  display: none;
-  opacity: 0;
-}
-
-#phoneCard.show {
-  display: block;
-  animation: fadeInScale 0.4s forwards;
-}
-
-#phoneCard.hide {
-  animation: fadeOutScale 0.4s forwards;
-}
 </style>
+<!-- Модальное окно для номера телефона -->
+<div id="donateModal" style="
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:#1a1a1a;
+  color:#00ffff;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 0 30px rgba(0, 255, 255, 0.6);
+  z-index:3000;
+  width:300px;
+  text-align:center;
+  font-family:'Segoe UI', sans-serif;
+  animation: fadeIn 0.4s ease;
+">
+  <h2 style="margin-top:0;">Т-Банк</h2>
+  <div id="cardContainer" onclick="copyDonateNumber()" style="
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    position:relative;
+    margin-bottom:20px;
+  ">
+    <p id="donateNumber" style="
+      font-size:22px;
+      margin:0;
+      font-family:'Segoe UI', sans-serif;
+      background:#000;
+      padding:10px 15px;
+      border-radius:8px;
+      box-shadow:inset 0 0 5px rgba(0,255,255,0.3);
+      border:1px solid #00ffff;
+      display:inline-block;
+    ">+7 (929) 829-66-61</p>
+    <span id="copyIcon" style="
+      font-size:20px;
+      transition:transform 0.2s ease;
+    " title="Нажми, чтобы скопировать">📋</span>
+    <span id="copiedText" style="
+      position:absolute;
+      top:-25px;
+      font-size:14px;
+      color:lime;
+      opacity:0;
+      transform:translateY(10px);
+      transition:opacity 0.3s ease, transform 0.3s ease;
+      pointer-events:none;
+    ">Скопировано!</span>
+  </div>
+  <button onclick="closeDonateModal()" style="
+    background:#00ffff;
+    color:#000;
+    border:none;
+    padding:8px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+  ">Закрыть</button>
+</div>
 </body>
 </html>
+
 
 
 
