@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" href="favicon.png" type="image/png">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyez</title>
@@ -22,17 +21,23 @@
     .blur { filter: blur(4px); transition: filter 0.4s ease; }
 
     .logo {
-      font-size: 4rem; font-weight: bold; color: #fff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: glitch 1s infinite; cursor: pointer;
-      user-select: none; text-align: center; margin-top: 100px;
-    }
-    @keyframes glitch {
-      0%,100% { transform: rotate(0deg); }
-      25% { transform: rotate(1deg); }
-      50% { transform: rotate(-1deg); }
-      75% { transform: rotate(1deg); }
-    }
+  font-size: 4rem;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  margin-top: 100px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  z-index: 1;
+  animation: softGlitch 2s infinite ease-in-out;
+  transition: text-shadow 0.4s ease;
+}
+
+@keyframes softGlitch {
+  0%, 100% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff; }
+  50% { text-shadow: 0 0 12px #00ffff, 0 0 24px #00ffff; }
+}
     .buttons {
       margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
     }
@@ -129,7 +134,65 @@
 
 3s ease 0.15s, opacity 0.3s ease 0.15s;
     }
-  </style>
+/* Глитч-фон */
+body::before, body::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  background: repeating-linear-gradient(
+    0deg,
+    #0d0d0d 0px,
+    #0d0d0d 2px,
+    #111 2px,
+    #111 4px
+  );
+  animation: glitchBackground 2s infinite linear;
+  opacity: 0.05;
+}
+
+@keyframes glitchBackground {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Глитч-фон */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: -1;
+  background: radial-gradient(circle at center, #111 0%, #0d0d0d 100%);
+  animation: subtleNoise 10s infinite linear;
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+@keyframes subtleNoise {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.02); }
+  100% { filter: brightness(1); }
+}
+
+/* Глитч-анимация логотипа */
+    .logo {
+      font-size: 4rem; font-weight: bold; color: #fff;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+      animation: glitch 1s infinite; cursor: pointer;
+      user-select: none; text-align: center; margin-top: 100px;
+    }
+    @keyframes glitch {
+      0%,100% { transform: rotate(0deg); }
+      25% { transform: rotate(1deg); }
+      50% { transform: rotate(-1deg); }
+      75% { transform: rotate(1deg); }
+    }
+ </style>
 </head>
 <body>
   <div class="burger" onclick="toggleMenu()">
@@ -253,6 +316,35 @@ function copyDonateNumber() {
     }, 2000);
   });
 }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeConfig();
+    closeDonateModal();
+  }
+});
+
+function toggleTelegram() {
+  document.getElementById('telegram').classList.toggle('visible');
+  const logo = document.querySelector('.logo');
+  logo.classList.toggle('purple');
+}
+function toggleTelegram() {
+  document.getElementById('telegram').classList.toggle('visible')
+
+  const body = document.body;
+  if (body.classList.contains('cyan-theme')) {
+    body.classList.remove('cyan-theme');
+    body.classList.add('purple-theme');
+  } else {
+    body.classList.remove('purple-theme');
+    body.classList.add('cyan-theme');
+  }
+}
+window.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add('loaded', 'cyan-theme');
+  });
+
   </script>
 <div id="modalOverlay" onclick="closeModal()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000;"></div>
 
@@ -332,7 +424,26 @@ function copyDonateNumber() {
     from { opacity: 0; transform: translate(-50%, -60%); }
     to { opacity: 1; transform: translate(-50%, -50%); }
   }
-</style>
+/* Эффект градиент на фоне */
+body {
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(135deg, #000000, #4B0082); /* черный и индиго */
+  background-size: 200% 200%;
+  animation: breathing 6s ease-in-out infinite;
+}
+
+@keyframes breathing {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}</style>
 <!-- Модальное окно для номера телефона -->
 <div id="donateModal" style="
   display:none;
@@ -399,6 +510,7 @@ function copyDonateNumber() {
 </div>
 </body>
 </html>
+
 
 
 
