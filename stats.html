@@ -497,345 +497,325 @@
   </div>
 
   <script>
-    // ==================== СИСТЕМА ЧАСТИЦ ====================
-    function initParticleSystem() {
-      const canvas = document.getElementById('particleCanvas');
-      const ctx = canvas.getContext('2d');
-      let particles = [];
-      const mouse = { x: 0, y: 0, radius: 100 };
-
-      function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-
-      class Particle {
-        constructor() {
-          this.x = Math.random() * canvas.width;
-          this.y = Math.random() * canvas.height;
-          this.size = Math.random() * 2 + 0.5;
-          this.speedX = (Math.random() - 0.5) * 0.5;
-          this.speedY = (Math.random() - 0.5) * 0.5;
-          this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1})`;
-        }
-
-        update() {
-          this.x += this.speedX;
-          this.y += this.speedY;
-
-          // Wrap around edges
-          if (this.x < 0) this.x = canvas.width;
-          if (this.x > canvas.width) this.x = 0;
-          if (this.y < 0) this.y = canvas.height;
-          if (this.y > canvas.height) this.y = 0;
-
-          // Mouse interaction
-          const dx = this.x - mouse.x;
-          const dy = this.y - mouse.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < mouse.radius) {
-            const force = (mouse.radius - distance) / mouse.radius;
-            const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * force * 2;
-            this.y += Math.sin(angle) * force * 2;
-          }
-        }
-
-        draw() {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-          ctx.fillStyle = this.color;
-          ctx.fill();
-        }
-      }
-
-      function init() {
-        resize();
-        particles = [];
-        for (let i = 0; i < 80; i++) {
-          particles.push(new Particle());
-        }
-      }
-
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Update and draw particles
-        particles.forEach(particle => {
-          particle.update();
-          particle.draw();
-        });
-
-        // Draw connections
-        drawConnections();
-        requestAnimationFrame(animate);
-      }
-
-      function drawConnections() {
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < 120) {
-              ctx.beginPath();
-              ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - distance/120)})`;
-              ctx.lineWidth = 0.5;
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.stroke();
-            }
-          }
-        }
-      }
-
-      // Event listeners
-      window.addEventListener('resize', resize);
-      canvas.addEventListener('mousemove', (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-      });
-
-      // Touch support for mobile
-      canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        mouse.x = touch.clientX;
-        mouse.y = touch.clientY;
-      }, { passive: false });
-
-      // Initialize and start animation
-      init();
-      animate();
-    }
-
-    // Конфигурация API
+    // Конфигурация
     const CONFIG = {
-      steamId: '76561199873447965',
-      useRealAPI: true,
-      apiKeys: {
-        steam: 'STEAM_API_KEY',
-        faceit: 'DEMO_KEY',
-        tracker: 'DEMO_KEY'
-      }
+        steamId: '76561199873447965',
+        useRealAPI: true
     };
 
-    // Мок-данные
-    function generateMockStats() {
-      const maps = ['de_mirage', 'de_inferno', 'de_dust2', 'de_nuke', 'de_vertigo', 'de_overpass', 'de_ancient'];
-      const matches = [];
-      
-      for (let i = 0; i < 10; i++) {
-        const isWin = Math.random() > 0.4;
-        const kills = Math.floor(Math.random() * 15) + 10;
-        const deaths = Math.floor(Math.random() * 15) + 5;
-        const assists = Math.floor(Math.random() * 10);
+    // Функция для получения реальной статистики через ваш бэкенд
+    async function fetchRealStats() {
+        try {
+            // Запрос к вашему API endpoint (нужно создать на бэкенде)
+            const response = await fetch('/api/cs2-stats', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    steamId: CONFIG.steamId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('API response not ok');
+            }
+
+            const realData = await response.json();
+            return processRealData(realData);
+            
+        } catch (error) {
+            console.error('Ошибка загрузки реальной статистики:', error);
+            // Возвращаем демо-данные при ошибке
+            return generateMockStats();
+        }
+    }
+
+    function processRealData(apiData) {
+        // Обработка данных от вашего бэкенда
+        // Адаптируйте под структуру данных, которую возвращает ваш API
         
-        matches.push({
-          id: i,
-          map: maps[Math.floor(Math.random() * maps.length)],
-          result: isWin ? 'win' : 'loss',
-          score: `${Math.floor(Math.random() * 10) + 10}-${Math.floor(Math.random() * 10) + 10}`,
-          kills: kills,
-          deaths: deaths,
-          assists: assists,
-          rating: (kills / Math.max(deaths, 1)).toFixed(2),
-          date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toLocaleDateString()
-        });
-      }
-      
-      const totalMatches = Math.floor(Math.random() * 200) + 100;
-      const wins = Math.floor(totalMatches * (0.4 + Math.random() * 0.3));
-      const losses = totalMatches - wins;
-      
-      return {
-        faceitLevel: Math.floor(Math.random() * 10) + 1,
-        eloRating: Math.floor(Math.random() * 2000) + 1000,
-        totalMatches: totalMatches,
-        wins: wins,
-        losses: losses,
-        winRate: ((wins / totalMatches) * 100).toFixed(1),
-        kdRatio: (1 + Math.random() * 1.5).toFixed(2),
-        hsPercent: (Math.floor(Math.random() * 30) + 20).toFixed(1),
-        adr: Math.floor(Math.random() * 50) + 70,
-        mvpCount: Math.floor(Math.random() * 100) + 50,
-        monthMatches: Math.floor(Math.random() * 30) + 10,
-        monthWins: Math.floor(Math.random() * 20) + 5,
-        monthLosses: Math.floor(Math.random() * 15) + 5,
-        winStreak: Math.floor(Math.random() * 7),
-        bestKills: Math.floor(Math.random() * 15) + 25,
-        matches: matches,
-        lastUpdated: new Date().toLocaleString(),
-        source: 'demo'
-      };
+        return {
+            faceitLevel: apiData.faceitLevel || 0,
+            eloRating: apiData.eloRating || 0,
+            totalMatches: apiData.totalMatches || 0,
+            wins: apiData.wins || 0,
+            losses: apiData.losses || 0,
+            winRate: apiData.winRate || '0%',
+            kdRatio: apiData.kdRatio || '0.00',
+            hsPercent: apiData.hsPercent || '0%',
+            adr: apiData.averageDamage || 0,
+            mvpCount: apiData.mvpCount || 0,
+            monthMatches: apiData.recentMatches || 0,
+            monthWins: apiData.recentWins || 0,
+            monthLosses: apiData.recentLosses || 0,
+            winStreak: apiData.winStreak || 0,
+            bestKills: apiData.bestKills || 0,
+            matches: apiData.matches || [],
+            lastUpdated: new Date().toLocaleString(),
+            source: 'real'
+        };
+    }
+
+    // Демо-данные (как запасной вариант)
+    function generateMockStats() {
+        const maps = ['de_mirage', 'de_inferno', 'de_dust2', 'de_nuke', 'de_vertigo', 'de_overpass', 'de_ancient'];
+        const matches = [];
+        
+        for (let i = 0; i < 10; i++) {
+            const isWin = Math.random() > 0.4;
+            const kills = Math.floor(Math.random() * 15) + 10;
+            const deaths = Math.floor(Math.random() * 15) + 5;
+            const assists = Math.floor(Math.random() * 10);
+            
+            matches.push({
+                id: i,
+                map: maps[Math.floor(Math.random() * maps.length)],
+                result: isWin ? 'win' : 'loss',
+                score: ${Math.floor(Math.random() * 10) + 10}-${Math.floor(Math.random() * 10) + 10},
+                kills: kills,
+                deaths: deaths,
+                assists: assists,
+                rating: (kills / Math.max(deaths, 1)).toFixed(2),
+                date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toLocaleDateString()
+            });
+        }
+        
+        const totalMatches = Math.floor(Math.random() * 200) + 100;
+        const wins = Math.floor(totalMatches * (0.4 + Math.random() * 0.3));
+        const losses = totalMatches - wins;
+        
+        return {
+            faceitLevel: Math.floor(Math.random() * 10) + 1,
+            eloRating: Math.floor(Math.random() * 2000) + 1000,
+            totalMatches: totalMatches,
+            wins: wins,
+            losses: losses,
+            winRate: ((wins / totalMatches) * 100).toFixed(1),
+            kdRatio: (1 + Math.random() * 1.5).toFixed(2),
+            hsPercent: (Math.floor(Math.random() * 30) + 20).toFixed(1),
+            adr: Math.floor(Math.random() * 50) + 70,
+            mvpCount: Math.floor(Math.random() * 100) + 50,
+            monthMatches: Math.floor(Math.random() * 30) + 10,
+            monthWins: Math.floor(Math.random() * 20) + 5,
+            monthLosses: Math.floor(Math.random() * 15) + 5,
+            winStreak: Math.floor(Math.random() * 7),
+            bestKills: Math.floor(Math.random() * 15) + 25,
+            matches: matches,
+            lastUpdated: new Date().toLocaleString(),
+            source: 'demo'
+        };
     }
 
     // Функции для модального окна матча
     function openMatchModal(match) {
-      const modalTitle = document.getElementById('matchModalTitle');
-      const modalContent = document.getElementById('matchModalContent');
-      
-      modalTitle.textContent = `Матч на ${match.map}`;
-      
-      // Генерируем детальную информацию о матче
-      let content = `
-        <div style="margin-bottom: 15px;">
-          <p><strong>Результат:</strong> <span class="${match.result === 'win' ? 'win' : 'loss'}">${match.result === 'win' ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}</span></p>
-          <p><strong>Счет:</strong> ${match.score}</p>
-          <p><strong>Дата:</strong> ${match.date}</p>
-        </div>
+        const modalTitle = document.getElementById('matchModalTitle');
+        const modalContent = document.getElementById('matchModalContent');
         
-        <div class="team-section">
-          <div class="team-header">Ваша статистика:</div>
-          <div class="player-stats">
-            <div class="player-stat-item">
-              <span>Убийства:</span>
-              <span>${match.kills}</span>
-            </div>
-            <div class="player-stat-item">
-              <span>Смерти:</span>
-              <span>${match.deaths}</span>
-            </div>
-            <div class="player-stat-item">
-              <span>Помощи:</span>
-              <span>${match.assists}</span>
-            </div>
-            <div class="player-stat-item">
-              <span>Рейтинг:</span>
-              <span>${match.rating}</span>
-            </div>
-          </div>
-        </div>
+        modalTitle.textContent = Матч на ${match.map};
         
-        <div class="team-section">
-          <div class="team-header">Командная статистика:</div>
-          <div class="player-stats">
-      `;
-      
-      // Генерируем случайные данные для команды
-      const teamPlayers = ['Lyez', 'Player2', 'Player3', 'Player4', 'Player5'];
-      teamPlayers.forEach((player, index) => {
-        const kills = index === 0 ? match.kills : Math.floor(Math.random() * 15) + 5;
-        const deaths = index === 0 ? match.deaths : Math.floor(Math.random() * 15) + 5;
-        const assists = index === 0 ? match.assists : Math.floor(Math.random() * 8);
-        const rating = (kills / Math.max(deaths, 1)).toFixed(2);
-        
-        content += `
-          <div class="player-stat-item">
-            <span>${player}:</span>
-            <span>${kills}/${deaths}/${assists} (${rating})</span>
-          </div>
+        let content = `
+            <div style="margin-bottom: 15px;">
+                <p><strong>Результат:</strong> <span class="${match.result === 'win' ? 'win' : 'loss'}">${match.result === 'win' ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}</span></p>
+                <p><strong>Счет:</strong> ${match.score}</p>
+                <p><strong>Дата:</strong> ${match.date}</p>
+            </div>
+            
+            <div class="team-section">
+                <div class="team-header">Ваша статистика:</div>
+                <div class="player-stats">
+                    <div class="player-stat-item">
+                        <span>Убийства:</span>
+                        <span>${match.kills}</span>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Смерти:</span>
+                        <span>${match.deaths}</span>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Помощи:</span>
+                        <span>${match.assists}</span>
+                    </div>
+                    <div class="player-stat-item">
+                        <span>Рейтинг:</span>
+                        <span>${match.rating}</span>
+                    </div>
+                </div>
+            </div>
         `;
-      });
-      
-      content += `
-          </div>
-        </div>
-      `;
-      
-      modalContent.innerHTML = content;
-      document.getElementById('matchModalOverlay').style.display = 'block';
-      document.getElementById('matchModal').style.display = 'block';
+        
+        // Для реальных данных показываем дополнительную информацию
+        if (match.source === 'real' && match.detailedStats) {
+            content += `
+                <div class="team-section">
+                    <div class="team-header">Детальная статистика:</div>
+                    <div class="player-stats">
+                        <div class="player-stat-item">
+                            <span>Хедшоты:</span>
+                            <span>${match.detailedStats.headshots || 0}</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span>Урон:</span>
+                            <span>${match.detailedStats.damage || 0}</span>
+                        </div>
+                        <div class="player-stat-item">
+                            <span>МВП:</span>
+                            <span>${match.detailedStats.mvp || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        modalContent.innerHTML = content;
+        document.getElementById('matchModalOverlay').style.display = 'block';
+        document.getElementById('matchModal').style.display = 'block';
     }
 
     function closeMatchModal() {
-      document.getElementById('matchModalOverlay').style.display = 'none';
-      document.getElementById('matchModal').style.display = 'none';
+        document.getElementById('matchModalOverlay').style.display = 'none';
+        document.getElementById('matchModal').style.display = 'none';
     }
 
     // Основная функция загрузки статистики
     async function loadStats() {
-      const loadingElement = document.getElementById('loading');
-      const statsContent = document.getElementById('stats-content');
-      const apiStatus = document.getElementById('api-status');
-      
-      loadingElement.style.display = 'block';
-      statsContent.style.display = 'none';
-      
-      try {
-        let stats;
+        const loadingElement = document.getElementById('loading');
+        const statsContent = document.getElementById('stats-content');
+        const apiStatus = document.getElementById('api-status');
         
-        if (CONFIG.useRealAPI) {
-          // Режим реальных API (не реализовано)
-          apiStatus.className = 'api-status live';
-          apiStatus.textContent = '✅ Режим реальных данных';
-          stats = generateMockStats(); // Временная заглушка
-        } else {
-          // Используем демо-данные
-          stats = generateMockStats();
-          apiStatus.className = 'api-status demo';
-          apiStatus.textContent = '🔄 Режим демо-данных';
+        loadingElement.style.display = 'block';
+        statsContent.style.display = 'none';
+        
+        try {
+            let stats;
+            
+            if (CONFIG.useRealAPI) {
+                stats = await fetchRealStats();
+                apiStatus.className = 'api-status live';
+                apiStatus.textContent = '✅ Режим реальных данных';
+            } else {
+                stats = generateMockStats();
+                apiStatus.className = 'api-status demo';
+                apiStatus.textContent = '🔄 Режим демо-данных';
+            }
+            
+            updateUI(stats);
+            loadingElement.style.display = 'none';
+            statsContent.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Ошибка загрузки статистики:', error);
+            loadingElement.innerHTML = '<h3>Ошибка загрузки статистики</h3><p>Попробуйте обновить страницу</p>';
         }
-        
-        updateUI(stats);
-        loadingElement.style.display = 'none';
-        statsContent.style.display = 'block';
-        
-      } catch (error) {
-        console.error('Ошибка загрузки статистики:', error);
-        loadingElement.innerHTML = '<h3>Ошибка загрузки статистики</h3><p>Попробуйте обновить страницу</p>';
-      }
     }
 
     function updateUI(stats) {
-      // Заполняем статистику
-      document.getElementById('faceit-level').textContent = stats.faceitLevel;
-      document.getElementById('elo-rating').textContent = stats.eloRating;
-      document.getElementById('total-matches').textContent = stats.totalMatches;
-      document.getElementById('win-rate').textContent = `${stats.winRate}%`;
-      document.getElementById('kd-ratio').textContent = stats.kdRatio;
-      document.getElementById('hs-percent').textContent = `${stats.hsPercent}%`;
-      document.getElementById('adr').textContent = stats.adr;
-      document.getElementById('mvp-count').textContent = stats.mvpCount;
-      document.getElementById('month-matches').textContent = stats.monthMatches;
-      document.getElementById('month-wl').textContent = `${stats.monthWins}W / ${stats.monthLosses}L`;
-      document.getElementById('win-streak').textContent = `${stats.winStreak} ${stats.winStreak === 1 ? 'победа' : 'побед'}`;
-      document.getElementById('best-kills').textContent = stats.bestKills;
-      
-      // Заполняем матчи
-      const matchesContainer = document.getElementById('matches-container');
-      matchesContainer.innerHTML = '';
-      
-      if (stats.matches && stats.matches.length > 0) {
-        stats.matches.forEach(match => {
-          const matchElement = document.createElement('div');
-          matchElement.className = 'match-item';
-          matchElement.innerHTML = `
-            <div>
-              <strong>${match.map}</strong><br>
-              <small>${match.date}</small>
-            </div>
-            <div>${match.score}</div>
-            <div>${match.kills}/${match.deaths}/${match.assists}</div>
-            <div class="match-result ${match.result === 'win' ? 'win' : 'loss'}">
-              ${match.result === 'win' ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}
-            </div>
-          `;
-          // Добавляем обработчик клика для открытия деталей матча
-          matchElement.addEventListener('click', () => openMatchModal(match));
-          matchesContainer.appendChild(matchElement);
-        });
-      } else {
-        matchesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Нет данных о матчах</div>';
-      }
-      
-      document.getElementById('last-updated').textContent = stats.lastUpdated;
-    }
+        // Заполняем статистику
+        document.getElementById('faceit-level').textContent = stats.faceitLevel;
+        document.getElementById('elo-rating').textContent = stats.eloRating;
+        document.getElementById('total-matches').textContent = stats.totalMatches;
+        document.getElementById('win-rate').textContent = ${stats.winRate}%;
+        document.getElementById('kd-ratio').textContent = stats.kdRatio;
+        stats.kdRatio;
+        document.getElementById('hs-percent document.getElementById('hs-per').textContent =cent').textContent = `${stats.hsPercent} ${stats.hsPercent}%;
+        document%`;
+        document.getElementById('.getElementById('adr').textContent = stats.adr;
+        document.getElementById('adr').textContent = stats.adr;
+        document.getElementById('mvpmvp-count').textContent-count').textContent = stats.mvp = stats.mvpCount;
+Count;
+        document.getElementById('        document.getElementById('month-matches').textContentmonth-m = stats.monthMatches;
+atches').textContent = stats.monthMatches;
+        document.getElementById('        document.getElementById('month-wl').textContentmonth-wl').textContent = `${stats.m = ${stats.monthWins}W /onthWins}W / ${ ${stats.monthLosses}stats.monthLossesL;
+        document.getElementById('win-stre}L`;
+        document.getElementById('win-streakak').textContent =').textContent = `${stats.winStreak ${stats.winStreak} ${stats.w} ${stats.winStreinStreak === 1ak === 1 ? 'победа ? 'победа' : 'поб' : 'победед'};
+'}`;
+        document        document.getElementById('best-kills')..getElementById('best-kills').textContent = statstextContent = stats.b.bestKills;
+estKills;
+        
+        // Запол        
+        // Заполняем матчи
+няем матчи
+        const matchesContainer = document        const matchesContainer = document.getElementById('matches-container.getElementById('matches-container');
+');
+        matchesContainer        matchesContainer.innerHTML.innerHTML = '';
+        
+        if = '';
+        
+        if (stats (stats.matches && stats.matches && stats.matches.length > .matches.length > 00) {
+            stats) {
+            stats.m.matches.forEach(match =>atches.forEach(match => {
+                const match {
+                const matchElement =Element = document.createElement('div');
+                matchElement.className document.createElement('div');
+                matchElement.className = 'match = 'match-item';
+                matchElement.innerHTML-item';
+                matchElement.innerHTML = = `
+                    <div `
+                    <div>
+                        <strong>${match.map}</strong>
+                        <strong>${match.map}</strong><br>
+                        <><br>
+                        <smallsmall>${match.date}</small>${match.date}</small>
+                    </div>
+                   >
+                    </div>
+                    <div>${ <div>${matchmatch.score}</div>
+                   .score}</div>
+                    <div>${ <div>${match.kills}/${match.deaths}/${match.assists}</div>
+                    <divmatch.kills}/${match.deaths}/${match.assists}</div>
+                    <div class="match-result class="match-result ${match ${match.result === 'win.result === 'win' ?' ? 'win' 'win' : : 'loss'}">
+ 'loss'}">
+                        ${                        ${match.result ===match.result === 'win' ? 'ПО 'win' ? 'ПОБЕДА'БЕДА' : ' :ПОРАЖ 'ПОРАЖЕНИЕ'}
+                    </divЕНИЕ'}
+                    </div>
+                `>
+                `;
+;
+                matchElement.addEventListener('click', () => open                matchElement.addEventListener('click', () =>MatchModal(match));
+                openMatchModal(match));
+                matchesContainer.appendChild(matchElement matchesContainer.appendChild(matchElement);
+            });
+       );
+            });
+        } else {
+            matchesContainer } else {
+            matchesContainer.innerHTML = '<div style.innerHTML = '<div="text-align: center style="text-align: center; padding: ; padding: 20px; color: #20px; color: #666;">666;">Нет данных о матчахНет данных о матчах</div>';
+        }
+        
+</div>';
+        }
+        
+        document.getElementById('last        document.getElementById('last-updated').textContent-updated').textContent = stats.lastUpdated;
+    = stats.lastUpdated;
+ }
 
-    // Закрытие модального окна по ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeMatchModal();
-      }
+    // З    }
+
+    // Закрытие макрытие модального окна по ESCодального окна по ESC
+    document.addEventListener('keydown
+    document.addEventListener('keydown', (e', (e) => {
+        if (e.key) => {
+        if ( === 'Escapee.key === 'Escape') {
+            close') {
+            closeMatchModalMatchModal();
+        }
+   ();
+        }
     });
 
-    // Загружаем статистику при загрузке страницы
-    document.addEventListener('DOMContentLoaded', () => {
-      initParticleSystem();
-      loadStats();
+ });
+
+    // За    // Загружагружаем статистику прием статистику при загруз загрузке страке страницы
+ницы
+    document.addEventListener('    document.addEventListener('DOMContentDOMContentLoaded',Loaded', () => {
+        init () => {
+        initParticleSystemParticleSystem();
+        loadStats();
+        loadStats();
+   ();
     });
-  </script>
+</script });
+</script>
+
 </body>
 </html>
