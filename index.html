@@ -9,14 +9,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Lyez">
-  
+  <link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyez</title>
@@ -160,10 +153,10 @@
       .logo { font-size: 2.5rem; margin-top: 40vh; }
     }
     
-    /* Бургер-меню - ВОЗВРАЩЕНО НА ПРЕЖНЮЮ ПОЗИЦИЮ */
+    /* ОБНОВЛЕННОЕ БУРГЕР-МЕНЮ - ПОДНЯТО ВЫШЕ */
     .burger {
       position: fixed; 
-      top: 20px; /* Оставалось на месте */
+      top: 15px; /* Поднято выше */
       right: 20px; 
       width: 30px; 
       height: 24px;
@@ -180,12 +173,44 @@
       height: 4px; 
       background: var(--primary-color); 
       border-radius: 2px;
-      transition: all 0.4s ease;
+      transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+      transform-origin: center;
     }
     
-    .burger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-    .burger.active span:nth-child(2) { opacity: 0; }
-    .burger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+    /* Анимация средней палочки - улетает вправо */
+    .burger span:nth-child(2) {
+      transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    }
+    
+    .burger.active span:nth-child(2) {
+      transform: translateX(100px);
+      opacity: 0;
+    }
+    
+    /* Анимация возврата средней палочки */
+    .burger:not(.active) span:nth-child(2) {
+      animation: returnMiddle 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    }
+    
+    @keyframes returnMiddle {
+      from {
+        transform: translateX(-100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    /* Преобразование в крестик */
+    .burger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+    }
+    
+    .burger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+    }
 
     /* Меню */
     .menu {
@@ -456,7 +481,7 @@
     .smooth-scroll {
       scroll-behavior: smooth;
     }
-
+    
     /* Lazy loading элементы */
     .lazy-load {
       opacity: 0;
@@ -499,33 +524,6 @@
       70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
       100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
     }
-
-    /* Кнопка установки PWA */
-    .pwa-install-btn {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      background: var(--primary-color);
-      color: var(--bg-color);
-      border: none;
-      padding: 12px 20px;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      z-index: 999;
-      transition: all 0.3s ease;
-      display: none;
-    }
-    
-    .pwa-install-btn:hover {
-      transform: scale(1.05);
-      background: #e0e0e0;
-    }
-
-    .pwa-install-btn.show {
-      display: block;
-    }
   </style>
 </head>
 <body>
@@ -545,9 +543,7 @@
   <!-- Toast контейнер -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Кнопка установки PWA -->
-  <button class="pwa-install-btn" id="pwaInstallBtn">📱 Установить приложение</button>
-
+  <!-- ОБНОВЛЕННОЕ БУРГЕР-МЕНЮ - ПОДНЯТО ВЫШЕ -->
   <div class="burger" onclick="toggleMenu()">
     <span></span><span></span><span></span>
   </div>
@@ -591,18 +587,17 @@
         <a href="#" onclick="showDonateModal()">💳 My number for donate</a>
       </div>
 
-      <!-- ОБНОВЛЕННАЯ папка Управление данными -->
+      <!-- ОБНОВЛЕННЫЙ раздел для управления данными - добавлена функция уведомлений -->
       <button class="menu-btn" onclick="toggleSubmenu('dataSubmenu', this)">
         📁 Управление данными
         <span class="menu-icon">›</span>
       </button>
       <div class="submenu" id="dataSubmenu">
-        <a href="#" onclick="toggleNotificationSettings()">🔔 Настройки уведомлений</a>
+        <a href="#" onclick="toggleNotificationSettings()">🔔 Управление уведомлениями</a>
         <a href="#" onclick="exportData()">💾 Экспорт данных</a>
         <a href="#" onclick="importData()">📥 Импорт данных</a>
-        <a href="#" onclick="showCacheStatus()">📊 Статус кэша</a>
         <a href="#" onclick="clearCache()">🗑️ Очистить кэш</a>
-        <a href="#" onclick="togglePWAInstall()">📱 Установить PWA</a>
+        <a href="#" onclick="showCacheStatus()">📊 Статус кэша</a>
       </div>
     </div>
   </div>
@@ -660,7 +655,7 @@
     <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
   </div>
 
-  <!-- Модальное окно для управления уведомлениями -->
+  <!-- Новое модальное окно для управления уведомлениями -->
   <div id="notificationModal" class="modal" style="width: 350px; text-align: left;">
     <h2 style="margin-top:0;">🔔 Умные уведомления</h2>
     <div style="margin: 15px 0;">
@@ -694,108 +689,7 @@
     <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
   </div>
 
-  <!-- Модальное окно информации о PWA -->
-  <div id="pwaInfoModal" class="modal" style="width: 400px; text-align: left;">
-    <h2 style="margin-top:0;">📱 Установка PWA</h2>
-    <div style="margin: 15px 0;">
-      <p><strong>Преимущества установки:</strong></p>
-      <ul style="margin-left: 20px; margin-bottom: 15px;">
-        <li>🚀 Быстрая загрузка</li>
-        <li>📱 Работа оффлайн</li>
-        <li>🔔 Push-уведомления</li>
-        <li>🎯 Значок на рабочем столе</li>
-        <li>📊 Полноэкранный режим</li>
-      </ul>
-      <p><strong>Как установить:</strong></p>
-      <ol style="margin-left: 20px;">
-        <li>Нажмите кнопку "Установить" ниже</li>
-        <li>Или в меню браузера выберите "Установить приложение"</li>
-      </ol>
-    </div>
-    <button class="modal-btn" onclick="installPWA()">Установить</button>
-    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
-  </div>
-
   <script>
-    // ==================== PWA ФУНКЦИОНАЛ ====================
-    let deferredPrompt;
-    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
-
-    // Отслеживаем событие beforeinstallprompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Предотвращаем автоматическое отображение подсказки
-      e.preventDefault();
-      // Сохраняем событие для использования позже
-      deferredPrompt = e;
-      // Показываем кнопку установки
-      pwaInstallBtn.classList.add('show');
-      
-      showSmartToast('Приложение можно установить!', 'info', 3000);
-    });
-
-    // Обработчик клика по кнопке установки
-    pwaInstallBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        // Показываем подсказку установки
-        deferredPrompt.prompt();
-        // Ждем ответа пользователя
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          showSmartToast('Приложение успешно установлено!', 'success', 3000);
-        }
-        // Очищаем сохраненное событие
-        deferredPrompt = null;
-        // Скрываем кнопку установки
-        pwaInstallBtn.classList.remove('show');
-      }
-    });
-
-    // Отслеживаем успешную установку
-    window.addEventListener('appinstalled', () => {
-      console.log('PWA was installed');
-      deferredPrompt = null;
-      pwaInstallBtn.classList.remove('show');
-    });
-
-    // Функция для принудительной установки PWA
-    function installPWA() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            showSmartToast('Приложение успешно установлено!', 'success', 3000);
-          }
-          deferredPrompt = null;
-        });
-      } else {
-        showSmartToast('Установка недоступна в этом браузере', 'warning', 3000);
-      }
-      closeAllModals();
-    }
-
-    function togglePWAInstall() {
-      document.getElementById("modalOverlay").style.display = "block";
-      document.getElementById("pwaInfoModal").style.display = "block";
-    }
-
-    // Регистрация Service Worker для PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered: ', registration);
-            // Сохраняем информацию о регистрации в кэше
-            cacheManager.cacheData('sw_registration', {
-              registered: true,
-              timestamp: Date.now()
-            });
-          })
-          .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-          });
-      });
-    }
-
     // ==================== ИНИЦИАЛИЗАЦИЯ ====================
     window.addEventListener('load', () => {
       document.body.classList.add('loaded');
@@ -1273,7 +1167,6 @@
       document.getElementById("lisSkinsModal").style.display = "none";
       document.getElementById("notificationModal").style.display = "none";
       document.getElementById("cacheStatusModal").style.display = "none";
-      document.getElementById("pwaInfoModal").style.display = "none";
     }
 
     function showLisSkinsModal() {
