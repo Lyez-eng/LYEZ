@@ -393,7 +393,7 @@
 
   <div class="container">
     <div class="header">
-      <a href="sait.html" class="back-btn">← Назад на главную</a>
+      <a href="index.html" class="back-btn">← Назад на главную</a>
       <h1>Статистика CS2</h1>
       <button class="refresh-btn" onclick="loadStats()">Обновить</button>
     </div>
@@ -614,9 +614,9 @@
     // Конфигурация API
     const CONFIG = {
       steamId: '76561199873447965',
-      useRealAPI: false,
+      useRealAPI: true,
       apiKeys: {
-        steam: 'DEMO_KEY',
+        steam: 'STEAM_API_KEY',
         faceit: 'DEMO_KEY',
         tracker: 'DEMO_KEY'
       }
