@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyez</title>
+  <meta name="description" content="Lyez — твой портал в Steam, FACEIT и статистику CS2." />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <style>
+    :root {
+      --primary-color: #ffffff;
+      --bg-color: #000000;
+      --card-bg: #1a1a1a;
+      --grid-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      margin: 0;
+      background: var(--bg-color);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      opacity: 0;
+      transition: opacity 1s ease;
+      position: relative;
+      touch-action: manipulation;
+    }
+    
+    /* Фон-паутина */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px,
+        linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px;
+      z-index: -1;
+      animation: gridMove 20s linear infinite;
+    }
+    
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-1px, 1px); }
+      50% { transform: translate(1px, -1px); }
+      75% { transform: translate(-1px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+    
+    body.loaded { opacity: 1; }
+    .blur { filter: blur(4px); transition: filter 0.4s ease; }
+
+    .logo {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #fff;
+      text-align: center;
+      margin-top: 100px;
+      user-select: none;
+      position: relative;
+      z-index: 2;
+      animation: softGlitch 3s infinite ease-in-out;
+      text-shadow: 0 0 10px #fff, 0 0 20px #fff;
+    }
+
+    @keyframes softGlitch {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(-1px, 1px) scale(1.01); }
+      50% { transform: translate(1px, -1px) scale(1); }
+      75% { transform: translate(-1px, -1px) scale(1.01); }
+    }
+    
+    footer {
+      position: fixed; 
+      bottom: 10px; 
+      font-size: 0.9rem; 
+      color: #666;
+      width: 100%; 
+      text-align: center;
+      z-index: 2;
+    }
+    
+    /* Canvas для системы частиц */
+    #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+    
+    @media (max-width: 600px) {
+      .logo { font-size: 2.5rem; margin-top: 40vh; }
+    }
+    
+    /* Бургер-меню */
+    .burger {
+      position: fixed; 
+      top: 20px; 
+      right: 20px; 
+      width: 30px; 
+      height: 24px;
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between;
+      cursor: pointer; 
+      z-index: 1001;
+    }
+    
+    .burger span {
+      display: block; 
+      height: 4px; 
+      background: var(--primary-color); 
+      border-radius: 2px;
+      transition: all 0.4s ease;
+    }
+    
+    .burger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .burger.active span:nth-child(2) { opacity: 0; }
+    .burger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+
+    /* Меню */
+    .menu {
+      position: fixed; 
+      top: 0; 
+      right: -100%; 
+      width: 280px; 
+      height: 100%;
+      background: rgba(0, 0, 0, 0.98); 
+      backdrop-filter: blur(10px);
+      box-shadow: -2px 0 15px rgba(255, 255, 255, 0.1);
+      transition: right 0.4s ease; 
+      z-index: 1000;
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px;
+      border-left: 1px solid var(--grid-color);
+      overflow-y: auto;
+    }
+    
+    .menu.active { right: 0; }
+    
+    .menu-content {
+      margin-top: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .menu-btn, .menu-link {
+      color: var(--primary-color); 
+      text-decoration: none; 
+      font-size: 1.1rem;
+      transition: all 0.3s; 
+      background: none; 
+      border: none;
+      text-align: left; 
+      cursor: pointer; 
+      padding: 14px 16px;
+      font-family: inherit;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .menu-link {
+      display: block;
+    }
+    
+    .menu-btn:hover, .menu-link:hover { 
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Подменю - ОДИНАКОВАЯ АНИМАЦИЯ ДЛЯ ВСЕХ */
+    .submenu {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+
+    .submenu a {
+      font-size: 1rem;
+      padding-left: 25px;
+      color: #ccc;
+      transform: translateX(-8px);
+      opacity: 0;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 4px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+    }
+
+    .submenu a:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .submenu.show {
+      max-height: 500px;
+      opacity: 1;
+    }
+
+    .submenu.show a {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    /* УНИФИЦИРОВАННАЯ АНИМАЦИЯ ДЛЯ ВСЕХ ПОДМЕНЮ */
+    .submenu.show a:nth-child(1) {
+      transition: transform 0.3s ease 0.05s, opacity 0.3s ease 0.05s, background-color 0.3s ease;
+    }
+    
+    .submenu.show a:nth-child(2) {
+      transition: transform 0.3s ease 0.1s, opacity 0.3s ease 0.1s, background-color 0.3s ease;
+    }
+    
+    .submenu.show a:nth-child(3) {
+      transition: transform 0.3s ease 0.15s, opacity 0.3s ease 0.15s, background-color 0.3s ease;
+    }
+    
+    .submenu.show a:nth-child(4) {
+      transition: transform 0.3s ease 0.2s, opacity 0.3s ease 0.2s, background-color 0.3s ease;
+    }
+    
+    .submenu.show a:nth-child(5) {
+      transition: transform 0.3s ease 0.25s, opacity 0.3s ease 0.25s, background-color 0.3s ease;
+    }
+
+    .menu-icon {
+      font-size: 1.1rem;
+      transition: transform 0.3s ease;
+    }
+    
+    .menu-btn.active .menu-icon {
+      transform: rotate(90deg);
+    }
+
+    /* Модальные окна */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-bg);
+      color: var(--primary-color);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      z-index: 2001;
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      animation: fadeIn 0.4s ease;
+      border: 1px solid var(--grid-color);
+    }
+    
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      backdrop-filter: blur(5px);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    
+    .modal-btn {
+      background: var(--primary-color);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+    
+    .modal-btn:hover {
+      background: #ccc;
+    }
+    
+    #cardContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    
+    #donateNumber {
+      font-size: 22px;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 5px rgba(255,255,255,0.3);
+      border: 1px solid var(--primary-color);
+      display: inline-block;
+    }
+    
+    #copiedText {
+      position: absolute;
+      top: -25px;
+      font-size: 14px;
+      color: lime;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .crosshair-code {
+      font-family: monospace;
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      word-break: break-all;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Система частиц -->
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="burger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+
+  <div class="menu" id="menu">
+    <div class="menu-content">
+      <!-- Папка Profile -->
+      <button class="menu-btn" onclick="toggleSubmenu('profileSubmenu', this)">
+        📁 Profile
+        <span class="menu-icon">›</span>
+      </button>
+      <div class="submenu" id="profileSubmenu">
+        <a href="https://steamcommunity.com/profiles/76561199873447965/" target="_blank">🎮 Steam</a>
+        <a href="https://csstats.gg/ru-RU/player/76561199873447965" target="_blank">📊 CSSTATS</a>
+        <a href="https://www.faceit.com/ru/players/lyez" target="_blank">⚡ FACEIT</a>
+      </div>
+      
+      <!-- Кнопка Отслеживать -->
+      <a href="stats.html" class="menu-link">📈 Отслеживать</a>
+      
+      <!-- Папка Me Info -->
+      <button class="menu-btn" onclick="toggleSubmenu('meInfoSubmenu', this)">
+        📁 Me Info
+        <span class="menu-icon">›</span>
+      </button>
+      <div class="submenu" id="meInfoSubmenu">
+        <a href="#" onclick="showCrosshairModal()">🎯 My Crosshair</a>
+        <a href="#" onclick="showPCSpecs()">🖥️ My PC</a>
+        <a href="#" onclick="showConfig()">🛠️ My config</a>
+        <a href="https://t.me/Egirz" target="_blank">💬 Telegram</a>
+      </div>
+      
+      <!-- Папка Поддержать - ДОБАВЛЕНЫ ИКОНКИ -->
+      <button class="menu-btn" onclick="toggleSubmenu('supportSubmenu', this)">
+        📁 Поддержать
+        <span class="menu-icon">›</span>
+      </button>
+      <div class="submenu" id="supportSubmenu">
+        <a href="https://steamcommunity.com/tradeoffer/new/?partner=1507662452&token=ok2iAkM5" target="_blank">🔄 Trade</a>
+        <a href="#" onclick="showDonateModal()">💳 My number for donate</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="logo">Lyez</div>
+    <footer>© 2025 Lyez</footer>
+  </div>
+
+  <!-- Модальные окна -->
+  <div id="modalOverlay" class="modal-overlay" onclick="closeAllModals()"></div>
+  
+  <div id="modalBox" class="modal">
+    <div id="modalContent" style="white-space:pre-line; margin-bottom:15px;"></div>
+    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
+  </div>
+  
+  <div id="configModal" class="modal">
+    <h2 style="margin-top:0;">MY CFG</h2>
+    <button class="modal-btn" onclick="downloadConfig()">Download</button>
+    <br>
+    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
+  </div>
+  
+  <div id="donateModal" class="modal">
+    <h2 style="margin-top:0;">Т-Банк</h2>
+    <div id="cardContainer" onclick="copyDonateNumber()">
+      <p id="donateNumber">+7 (929) 829-66-61</p>
+      <span id="copyIcon" style="font-size:20px; transition:transform 0.2s ease;" title="Нажми, чтобы скопировать">📋</span>
+      <span id="copiedText">Скопировано!</span>
+    </div>
+    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
+  </div>
+
+  <!-- Новое модальное окно для прицела -->
+  <div id="crosshairModal" class="modal">
+    <h2 style="margin-top:0;">My Crosshair</h2>
+    <div id="crosshairContent">
+      <p>Код прицела скопирован в буфер обмена!</p>
+      <button class="modal-btn" onclick="showCrosshairCode()" id="showCodeBtn">Увидеть</button>
+    </div>
+    <div id="crosshairCode" class="crosshair-code" style="display: none;"></div>
+    <p id="crosshairCopied" style="color: lime; margin: 10px 0; display: none;">Скопировано</p>
+    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
+  </div>
+
+  <script>
+    // Инициализация
+    window.addEventListener('load', () => {
+      document.body.classList.add('loaded');
+      initParticleSystem();
+    });
+
+    // Функции меню
+    function toggleMenu() {
+      document.querySelector('.burger').classList.toggle('active');
+      document.getElementById('menu').classList.toggle('active');
+      document.getElementById('main').classList.toggle('blur');
+    }
+
+    function toggleSubmenu(submenuId, button) {
+      const submenu = document.getElementById(submenuId);
+      const isShowing = submenu.classList.contains('show');
+      
+      // Закрываем все подменю
+      document.querySelectorAll('.submenu').forEach(menu => {
+        menu.classList.remove('show');
+      });
+      
+      // Убираем активный класс со всех кнопок
+      document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Если подменю было закрыто, открываем его
+      if (!isShowing) {
+        submenu.classList.add('show');
+        button.classList.add('active');
+      }
+    }
+
+    // Функции модальных окон
+    function showModal(content) {
+      document.getElementById("modalContent").innerText = content;
+      document.getElementById("modalOverlay").style.display = "block";
+      document.getElementById("modalBox").style.display = "block";
+    }
+
+    function closeAllModals() {
+      document.getElementById("modalOverlay").style.display = "none";
+      document.getElementById("modalBox").style.display = "none";
+      document.getElementById("configModal").style.display = "none";
+      document.getElementById("donateModal").style.display = "none";
+      document.getElementById("crosshairModal").style.display = "none";
+    }
+
+    function showCrosshairModal() {
+      const crosshairCode = "CSGO-k6ZJJ-nxVr6-YRyKy-spG5o-aK6FP";
+      
+      // Копируем код в буфер обмена
+      navigator.clipboard.writeText(crosshairCode)
+        .then(() => {
+          // Сбрасываем состояние модального окна
+          document.getElementById('crosshairContent').style.display = 'block';
+          document.getElementById('crosshairCode').style.display = 'none';
+          document.getElementById('crosshairCopied').style.display = 'none';
+          document.getElementById('showCodeBtn').textContent = 'Увидеть';
+          
+          // Показываем модальное окно
+          document.getElementById("modalOverlay").style.display = "block";
+          document.getElementById("crosshairModal").style.display = "block";
+        })
+        .catch(() => {
+          showModal("Не удалось скопировать код.");
+        });
+    }
+
+    function showCrosshairCode() {
+      const crosshairCode = "CSGO-k6ZJJ-nxVr6-YRyKy-spG5o-aK6FP";
+      const codeElement = document.getElementById('crosshairCode');
+      const showBtn = document.getElementById('showCodeBtn');
+      const copiedText = document.getElementById('crosshairCopied');
+      
+      // Показываем код
+      codeElement.textContent = crosshairCode;
+      codeElement.style.display = 'block';
+      copiedText.style.display = 'block';
+      showBtn.textContent = 'Код показан';
+    }
+
+    function showPCSpecs() {
+      const specs = `🖥 PC:
+• Процессор: AMD Ryzen 5 9600X
+• Материнка: GIGABYTE B650M AORUS ELITE
+• Корпус: PHANTEKS XT M3
+• Видеокарта: Palit RTX 5070 Ti GAMINGPRO OC 16GB
+• Кулер: Thermalright Peerless Assassin 120 SE ARGB
+• ОЗУ: Acer Predator Pallas II 32Gb CL30
+• SSD: ADATA LEGEND 960
+• Блок питания: 1STPLAYER NGDP 850W
+• ОС: Windows 11 Pro`;
+      showModal(specs);
+    }
+
+    function showConfig() {
+      document.getElementById("modalOverlay").style.display = "block";
+      document.getElementById("configModal").style.display = "block";
+    }
+
+    function downloadConfig() {
+      const link = document.createElement("a");
+      link.href = "https://lyez-eng.github.io/LYEZ/files/cfg.zip";
+      link.download = "cfg.zip";
+      link.click();
+    }
+
+    function showDonateModal() {
+      document.getElementById("modalOverlay").style.display = "block";
+      document.getElementById("donateModal").style.display = "block";
+    }
+
+    function copyDonateNumber() {
+      const number = "79298296661";
+      const icon = document.getElementById("copyIcon");
+      const copiedText = document.getElementById("copiedText");
+
+      navigator.clipboard.writeText(number).then(() => {
+        icon.textContent = "✅";
+        copiedText.style.opacity = "1";
+        copiedText.style.transform = "translateY(0)";
+        setTimeout(() => {
+          icon.textContent = "📋";
+          copiedText.style.opacity = "0";
+          copiedText.style.transform = "translateY(10px)";
+        }, 2000);
+      });
+    }
+
+    // Закрытие по ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAllModals();
+        // Также закрываем меню если оно открыто
+        if (document.getElementById('menu').classList.contains('active')) {
+          toggleMenu();
+        }
+      }
+    });
+
+    // ==================== СИСТЕМА ЧАСТИЦ ====================
+    function initParticleSystem() {
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const mouse = { x: 0, y: 0, radius: 100 };
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.5;
+          this.speedY = (Math.random() - 0.5) * 0.5;
+          this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1})`;
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+
+          // Wrap around edges
+          if (this.x < 0) this.x = canvas.width;
+          if (this.x > canvas.width) this.x = 0;
+          if (this.y < 0) this.y = canvas.height;
+          if (this.y > canvas.height) this.y = 0;
+
+          // Mouse interaction
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < mouse.radius) {
+            const force = (mouse.radius - distance) / mouse.radius;
+            const angle = Math.atan2(dy, dx);
+            this.x += Math.cos(angle) * force * 2;
+            this.y += Math.sin(angle) * force * 2;
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      function init() {
+        resize();
+        particles = [];
+        for (let i = 0; i < 80; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Update and draw particles
+        particles.forEach(particle => {
+          particle.update();
+          particle.draw();
+        });
+
+        // Draw connections
+        drawConnections();
+        requestAnimationFrame(animate);
+      }
+
+      function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 120) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - distance/120)})`;
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Event listeners
+      window.addEventListener('resize', resize);
+      canvas.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      // Touch support for mobile
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        mouse.x = touch.clientX;
+        mouse.y = touch.clientY;
+      }, { passive: false });
+
+      // Initialize and start animation
+      init();
+      animate();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyez - Статистика CS2</title>
+  <style>
+    :root {
+      --primary-color: #ffffff;
+      --bg-color: #000000;
+      --card-bg: #1a1a1a;
+      --grid-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: var(--bg-color);
+      color: var(--primary-color);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      position: relative;
+      touch-action: manipulation;
+    }
+    
+    /* Фон-паутина */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px,
+        linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px;
+      z-index: -1;
+      animation: gridMove 20s linear infinite;
+    }
+    
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-1px, 1px); }
+      50% { transform: translate(1px, -1px); }
+      75% { transform: translate(-1px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+    
+    /* Canvas для системы частиц */
+    #particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--grid-color);
+    }
+    
+    .back-btn {
+      background: var(--card-bg);
+      color: var(--primary-color);
+      border: 1px solid var(--grid-color);
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.3s;
+      font-size: 1rem;
+      backdrop-filter: blur(10px);
+    }
+    
+    .back-btn:hover {
+      background: var(--primary-color);
+      color: #000;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+    }
+    
+    .player-info {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .player-name {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px var(--primary-color);
+      animation: softGlitch 3s infinite ease-in-out;
+    }
+
+    @keyframes softGlitch {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(-1px, 1px) scale(1.01); }
+      50% { transform: translate(1px, -1px) scale(1); }
+      75% { transform: translate(-1px, -1px) scale(1.01); }
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--grid-color);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-8px);
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .stat-card h3 {
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--grid-color);
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 5px 0;
+    }
+    
+    .stat-item:not(:last-child) {
+      border-bottom: 1px solid var(--grid-color);
+    }
+    
+    .stat-value {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .matches-list {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--grid-color);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+    
+    .matches-list h3 {
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--grid-color);
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    
+    .match-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 15px;
+      padding: 15px;
+      border-bottom: 1px solid var(--grid-color);
+      align-items: center;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .match-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .match-item:last-child {
+      border-bottom: none;
+    }
+    
+    .match-result {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    
+    .win {
+      background: rgba(0, 255, 0, 0.2);
+      color: #00ff00;
+      border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .loss {
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff0000;
+      border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--primary-color);
+    }
+    
+    .refresh-btn {
+      background: var(--primary-color);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      margin-left: 10px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .refresh-btn:hover {
+      background: #ccc;
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    }
+    
+    .last-updated {
+      text-align: center;
+      color: #666;
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+    
+    .api-status {
+      text-align: center;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .api-status.live {
+      background: rgba(0, 255, 0, 0.1);
+      color: #00ff00;
+      border: 1px solid #00ff00;
+    }
+    
+    .api-status.demo {
+      background: rgba(255, 165, 0, 0.1);
+      color: #ffa500;
+      border: 1px solid #ffa500;
+    }
+
+    /* Модальное окно деталей матча */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 2000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .match-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-bg);
+      color: var(--primary-color);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+      z-index: 2001;
+      max-width: 95%;
+      width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: fadeIn 0.4s ease;
+      border: 1px solid var(--grid-color);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    
+    .modal-btn {
+      background: var(--primary-color);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      margin-top: 15px;
+      width: 100%;
+    }
+    
+    .modal-btn:hover {
+      background: #ccc;
+    }
+    
+    .player-stats {
+      margin-top: 15px;
+    }
+    
+    .player-stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--grid-color);
+    }
+    
+    .player-stat-item:last-child {
+      border-bottom: none;
+    }
+    
+    .team-section {
+      margin-bottom: 20px;
+    }
+    
+    .team-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--grid-color);
+    }
+    
+    @media (max-width: 768px) {
+      .match-item {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 10px;
+      }
+      
+      .header {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .player-name {
+        font-size: 2rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .match-modal {
+        width: 95%;
+        padding: 15px;
+      }
+      
+      .refresh-btn {
+        margin-left: 0;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Система частиц -->
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="container">
+    <div class="header">
+      <a href="sait.html" class="back-btn">← Назад на главную</a>
+      <h1>Статистика CS2</h1>
+      <button class="refresh-btn" onclick="loadStats()">Обновить</button>
+    </div>
+    
+    <div class="player-info">
+      <div class="player-name">Lyez</div>
+      <div>Steam ID: 76561199873447965</div>
+      <div id="api-status" class="api-status demo">
+        🔄 Режим демо-данных
+      </div>
+    </div>
+    
+    <div id="loading" class="loading">
+      <h3>Загрузка статистики...</h3>
+    </div>
+    
+    <div id="stats-content" style="display: none;">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Общая статистика</h3>
+          <div class="stat-item">
+            <span>Уровень Faceit:</span>
+            <span class="stat-value" id="faceit-level">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Рейтинг Elo:</span>
+            <span class="stat-value" id="elo-rating">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Количество матчей:</span>
+            <span class="stat-value" id="total-matches">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Процент побед:</span>
+            <span class="stat-value" id="win-rate">-</span>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>Боевая эффективность</h3>
+          <div class="stat-item">
+            <span>K/D Ratio:</span>
+            <span class="stat-value" id="kd-ratio">-</span>
+          </div>
+          <div class="stat-item">
+            <span>HS Percentage:</span>
+            <span class="stat-value" id="hs-percent">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Средний урон за раунд:</span>
+            <span class="stat-value" id="adr">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Количество MVP:</span>
+            <span class="stat-value" id="mvp-count">-</span>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <h3>Последние 30 дней</h3>
+          <div class="stat-item">
+            <span>Сыграно матчей:</span>
+            <span class="stat-value" id="month-matches">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Победы/Поражения:</span>
+            <span class="stat-value" id="month-wl">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Текущая серия:</span>
+            <span class="stat-value" id="win-streak">-</span>
+          </div>
+          <div class="stat-item">
+            <span>Лучший результат:</span>
+            <span class="stat-value" id="best-kills">-</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="matches-list">
+        <h3>Последние матчи</h3>
+        <div id="matches-container">
+          <!-- Матчи будут загружены через JavaScript -->
+        </div>
+      </div>
+      
+      <div class="last-updated">
+        Последнее обновление: <span id="last-updated">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно деталей матча -->
+  <div id="matchModalOverlay" class="modal-overlay" onclick="closeMatchModal()"></div>
+  <div id="matchModal" class="match-modal">
+    <h2 id="matchModalTitle">Детали матча</h2>
+    <div id="matchModalContent">
+      <!-- Содержимое будет заполнено через JavaScript -->
+    </div>
+    <button class="modal-btn" onclick="closeMatchModal()">Закрыть</button>
+  </div>
+
+  <script>
+    // ==================== СИСТЕМА ЧАСТИЦ ====================
+    function initParticleSystem() {
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const mouse = { x: 0, y: 0, radius: 100 };
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 2 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.5;
+          this.speedY = (Math.random() - 0.5) * 0.5;
+          this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.1})`;
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+
+          // Wrap around edges
+          if (this.x < 0) this.x = canvas.width;
+          if (this.x > canvas.width) this.x = 0;
+          if (this.y < 0) this.y = canvas.height;
+          if (this.y > canvas.height) this.y = 0;
+
+          // Mouse interaction
+          const dx = this.x - mouse.x;
+          const dy = this.y - mouse.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < mouse.radius) {
+            const force = (mouse.radius - distance) / mouse.radius;
+            const angle = Math.atan2(dy, dx);
+            this.x += Math.cos(angle) * force * 2;
+            this.y += Math.sin(angle) * force * 2;
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+      }
+
+      function init() {
+        resize();
+        particles = [];
+        for (let i = 0; i < 80; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Update and draw particles
+        particles.forEach(particle => {
+          particle.update();
+          particle.draw();
+        });
+
+        // Draw connections
+        drawConnections();
+        requestAnimationFrame(animate);
+      }
+
+      function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 120) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 * (1 - distance/120)})`;
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Event listeners
+      window.addEventListener('resize', resize);
+      canvas.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      // Touch support for mobile
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        mouse.x = touch.clientX;
+        mouse.y = touch.clientY;
+      }, { passive: false });
+
+      // Initialize and start animation
+      init();
+      animate();
+    }
+
+    // Конфигурация API
+    const CONFIG = {
+      steamId: '76561199873447965',
+      useRealAPI: false,
+      apiKeys: {
+        steam: 'DEMO_KEY',
+        faceit: 'DEMO_KEY',
+        tracker: 'DEMO_KEY'
+      }
+    };
+
+    // Мок-данные
+    function generateMockStats() {
+      const maps = ['de_mirage', 'de_inferno', 'de_dust2', 'de_nuke', 'de_vertigo', 'de_overpass', 'de_ancient'];
+      const matches = [];
+      
+      for (let i = 0; i < 10; i++) {
+        const isWin = Math.random() > 0.4;
+        const kills = Math.floor(Math.random() * 15) + 10;
+        const deaths = Math.floor(Math.random() * 15) + 5;
+        const assists = Math.floor(Math.random() * 10);
+        
+        matches.push({
+          id: i,
+          map: maps[Math.floor(Math.random() * maps.length)],
+          result: isWin ? 'win' : 'loss',
+          score: `${Math.floor(Math.random() * 10) + 10}-${Math.floor(Math.random() * 10) + 10}`,
+          kills: kills,
+          deaths: deaths,
+          assists: assists,
+          rating: (kills / Math.max(deaths, 1)).toFixed(2),
+          date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toLocaleDateString()
+        });
+      }
+      
+      const totalMatches = Math.floor(Math.random() * 200) + 100;
+      const wins = Math.floor(totalMatches * (0.4 + Math.random() * 0.3));
+      const losses = totalMatches - wins;
+      
+      return {
+        faceitLevel: Math.floor(Math.random() * 10) + 1,
+        eloRating: Math.floor(Math.random() * 2000) + 1000,
+        totalMatches: totalMatches,
+        wins: wins,
+        losses: losses,
+        winRate: ((wins / totalMatches) * 100).toFixed(1),
+        kdRatio: (1 + Math.random() * 1.5).toFixed(2),
+        hsPercent: (Math.floor(Math.random() * 30) + 20).toFixed(1),
+        adr: Math.floor(Math.random() * 50) + 70,
+        mvpCount: Math.floor(Math.random() * 100) + 50,
+        monthMatches: Math.floor(Math.random() * 30) + 10,
+        monthWins: Math.floor(Math.random() * 20) + 5,
+        monthLosses: Math.floor(Math.random() * 15) + 5,
+        winStreak: Math.floor(Math.random() * 7),
+        bestKills: Math.floor(Math.random() * 15) + 25,
+        matches: matches,
+        lastUpdated: new Date().toLocaleString(),
+        source: 'demo'
+      };
+    }
+
+    // Функции для модального окна матча
+    function openMatchModal(match) {
+      const modalTitle = document.getElementById('matchModalTitle');
+      const modalContent = document.getElementById('matchModalContent');
+      
+      modalTitle.textContent = `Матч на ${match.map}`;
+      
+      // Генерируем детальную информацию о матче
+      let content = `
+        <div style="margin-bottom: 15px;">
+          <p><strong>Результат:</strong> <span class="${match.result === 'win' ? 'win' : 'loss'}">${match.result === 'win' ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}</span></p>
+          <p><strong>Счет:</strong> ${match.score}</p>
+          <p><strong>Дата:</strong> ${match.date}</p>
+        </div>
+        
+        <div class="team-section">
+          <div class="team-header">Ваша статистика:</div>
+          <div class="player-stats">
+            <div class="player-stat-item">
+              <span>Убийства:</span>
+              <span>${match.kills}</span>
+            </div>
+            <div class="player-stat-item">
+              <span>Смерти:</span>
+              <span>${match.deaths}</span>
+            </div>
+            <div class="player-stat-item">
+              <span>Помощи:</span>
+              <span>${match.assists}</span>
+            </div>
+            <div class="player-stat-item">
+              <span>Рейтинг:</span>
+              <span>${match.rating}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="team-section">
+          <div class="team-header">Командная статистика:</div>
+          <div class="player-stats">
+      `;
+      
+      // Генерируем случайные данные для команды
+      const teamPlayers = ['Lyez', 'Player2', 'Player3', 'Player4', 'Player5'];
+      teamPlayers.forEach((player, index) => {
+        const kills = index === 0 ? match.kills : Math.floor(Math.random() * 15) + 5;
+        const deaths = index === 0 ? match.deaths : Math.floor(Math.random() * 15) + 5;
+        const assists = index === 0 ? match.assists : Math.floor(Math.random() * 8);
+        const rating = (kills / Math.max(deaths, 1)).toFixed(2);
+        
+        content += `
+          <div class="player-stat-item">
+            <span>${player}:</span>
+            <span>${kills}/${deaths}/${assists} (${rating})</span>
+          </div>
+        `;
+      });
+      
+      content += `
+          </div>
+        </div>
+      `;
+      
+      modalContent.innerHTML = content;
+      document.getElementById('matchModalOverlay').style.display = 'block';
+      document.getElementById('matchModal').style.display = 'block';
+    }
+
+    function closeMatchModal() {
+      document.getElementById('matchModalOverlay').style.display = 'none';
+      document.getElementById('matchModal').style.display = 'none';
+    }
+
+    // Основная функция загрузки статистики
+    async function loadStats() {
+      const loadingElement = document.getElementById('loading');
+      const statsContent = document.getElementById('stats-content');
+      const apiStatus = document.getElementById('api-status');
+      
+      loadingElement.style.display = 'block';
+      statsContent.style.display = 'none';
+      
+      try {
+        let stats;
+        
+        if (CONFIG.useRealAPI) {
+          // Режим реальных API (не реализовано)
+          apiStatus.className = 'api-status live';
+          apiStatus.textContent = '✅ Режим реальных данных';
+          stats = generateMockStats(); // Временная заглушка
+        } else {
+          // Используем демо-данные
+          stats = generateMockStats();
+          apiStatus.className = 'api-status demo';
+          apiStatus.textContent = '🔄 Режим демо-данных';
+        }
+        
+        updateUI(stats);
+        loadingElement.style.display = 'none';
+        statsContent.style.display = 'block';
+        
+      } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+        loadingElement.innerHTML = '<h3>Ошибка загрузки статистики</h3><p>Попробуйте обновить страницу</p>';
+      }
+    }
+
+    function updateUI(stats) {
+      // Заполняем статистику
+      document.getElementById('faceit-level').textContent = stats.faceitLevel;
+      document.getElementById('elo-rating').textContent = stats.eloRating;
+      document.getElementById('total-matches').textContent = stats.totalMatches;
+      document.getElementById('win-rate').textContent = `${stats.winRate}%`;
+      document.getElementById('kd-ratio').textContent = stats.kdRatio;
+      document.getElementById('hs-percent').textContent = `${stats.hsPercent}%`;
+      document.getElementById('adr').textContent = stats.adr;
+      document.getElementById('mvp-count').textContent = stats.mvpCount;
+      document.getElementById('month-matches').textContent = stats.monthMatches;
+      document.getElementById('month-wl').textContent = `${stats.monthWins}W / ${stats.monthLosses}L`;
+      document.getElementById('win-streak').textContent = `${stats.winStreak} ${stats.winStreak === 1 ? 'победа' : 'побед'}`;
+      document.getElementById('best-kills').textContent = stats.bestKills;
+      
+      // Заполняем матчи
+      const matchesContainer = document.getElementById('matches-container');
+      matchesContainer.innerHTML = '';
+      
+      if (stats.matches && stats.matches.length > 0) {
+        stats.matches.forEach(match => {
+          const matchElement = document.createElement('div');
+          matchElement.className = 'match-item';
+          matchElement.innerHTML = `
+            <div>
+              <strong>${match.map}</strong><br>
+              <small>${match.date}</small>
+            </div>
+            <div>${match.score}</div>
+            <div>${match.kills}/${match.deaths}/${match.assists}</div>
+            <div class="match-result ${match.result === 'win' ? 'win' : 'loss'}">
+              ${match.result === 'win' ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}
+            </div>
+          `;
+          // Добавляем обработчик клика для открытия деталей матча
+          matchElement.addEventListener('click', () => openMatchModal(match));
+          matchesContainer.appendChild(matchElement);
+        });
+      } else {
+        matchesContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Нет данных о матчах</div>';
+      }
+      
+      document.getElementById('last-updated').textContent = stats.lastUpdated;
+    }
+
+    // Закрытие модального окна по ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeMatchModal();
+      }
+    });
+
+    // Загружаем статистику при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+      initParticleSystem();
+      loadStats();
+    });
+  </script>
+</body>
+</html>
