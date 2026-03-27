@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Виселица | Lyez Game</title>
   <style>
-    /* (все предыдущие стили сохраняются) */
     * {
       margin: 0;
       padding: 0;
@@ -240,9 +239,10 @@
       transform: scale(0.97);
     }
 
-    /* бургер-меню */
+    /* бургер-меню - повышенный z-index */
     .burger-menu-wrapper {
       position: relative;
+      z-index: 2001;
     }
 
     .burger-icon {
@@ -271,8 +271,8 @@
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: 16px;
       padding: 8px 0;
-      min-width: 200px;
-      z-index: 1000;
+      min-width: 220px;
+      z-index: 2002;
       display: none;
       flex-direction: column;
     }
@@ -438,7 +438,7 @@
       border-radius: 24px;
       border: 1px solid rgba(255,255,255,0.3);
       padding: 16px;
-      z-index: 2000;
+      z-index: 2100;
       display: none;
       flex-direction: column;
       align-items: center;
@@ -555,61 +555,56 @@
   </div>
 
   <script>
-    // ------------------- РАСШИРЕННЫЕ СЛОВАРИ С УЧЕТОМ ДЛИНЫ ------------------
+    // ------------------- СЛОВАРИ ------------------
     const WORDS_POOL = {
-      easy:   ["кот","дом","лес","мир","сок","год","час","брат","слон","волк","дверь","мышь","ночь","день","путь","луна","снег","дождь","рука","нога","книга","стол","стул","окно","звезда","песня","река","гора","поле","лето","ёлка","ёж","мёд","лёд","зной","хлеб","сон","кит","бык","лев","рой","чай","сад","меч","щит","шар","шум","град","гриб","лист","хвост","лось","лось","перо","крыло","мост","враг","друг","хлеб","соль","ветер","дождь","гром","снегопад"],
-      medium: ["собака","корова","машина","улица","работа","дерево","солнце","город","школа","учитель","комната","завтрак","телефон","компьютер","планета","история","молния","ракета","библиотека","корабль","самолет","животное","погода","радуга","квартира","мечта","радость","дружба","секрет","путешествие","красота","природа","музыка","театр","карандаш","тетрадь","пирамида","колокол","победа","огонь","ветер","поезд","качели","кресло","костер","закат","восход","часы","месяц","звездопад"],
+      easy:   ["кот","дом","лес","мир","сок","год","час","брат","слон","волк","дверь","мышь","ночь","день","путь","луна","снег","дождь","рука","нога","книга","стол","стул","окно","звезда","песня","река","гора","поле","лето","ёлка","ёж","мёд","лёд","зной","хлеб","сон","кит","бык","лев","рой","чай","сад","меч","щит","шар","шум","град","гриб","лист","хвост","лось","перо","крыло","мост","враг","друг","соль","ветер","гром","снегопад"],
+      medium: ["собака","корова","машина","улица","работа","дерево","солнце","город","школа","учитель","комната","завтрак","телефон","компьютер","планета","история","молния","ракета","библиотека","корабль","самолет","животное","погода","радуга","квартира","мечта","радость","дружба","секрет","путешествие","красота","природа","музыка","театр","карандаш","тетрадь","пирамида","колокол","победа","огонь","поезд","качели","кресло","костер","закат","восход","часы","месяц","звездопад"],
       hard:   ["автомобиль","велосипед","достопримечательность","интеллект","программирование","обезьяна","электричество","правительство","универмаг","фотография","телевидение","воображение","оригинальный","конфигурация","реставрация","библиография","квалификация","трансформация","авиастроение","кинематограф","параллелепипед","человечность","дезоксирибонуклеиновая","экстраординарный","рефлексия","иллюминация","коммуникабельность","энергоэффективность","архитектура","фундаментальный","лаборатория","эксперимент","биосфера","гипербола","метаморфоза","рекомендация","специализация","университет","инфраструктура"]
     };
 
-    // Словарь определений (для подсказок)
     const WORD_HINTS = {
-      "автомобиль": "Транспортное средство с двигателем для перевозки пассажиров и грузов",
-      "велосипед": "Двухколёсная машина, приводимая в движение педалями",
-      "достопримечательность": "Место или объект, заслуживающий внимания благодаря своей уникальности",
-      "интеллект": "Способность мыслить, познавать и решать сложные задачи",
-      "программирование": "Процесс создания компьютерных программ",
-      "обезьяна": "Примат, близкий родственник человека",
-      "электричество": "Форма энергии, связанная с движением заряженных частиц",
-      "правительство": "Орган государственной власти, управляющий страной",
-      "фотография": "Изображение, полученное с помощью света",
-      "телевидение": "Средство массовой информации, передающее видео и аудио сигналы",
-      "кинематограф": "Искусство создания движущихся изображений, кино",
-      "параллелепипед": "Геометрическое тело с шестью гранями, каждая из которых — параллелограмм",
-      "человечность": "Качество, отражающее доброту, сострадание и гуманность",
-      "архитектура": "Искусство проектировать и строить здания",
-      "лаборатория": "Помещение для научных экспериментов",
-      "эксперимент": "Научный опыт, проводимый для проверки гипотезы",
+      "автомобиль": "Транспортное средство с двигателем",
+      "велосипед": "Двухколёсная машина на педалях",
+      "достопримечательность": "Знаменитое место, объект туризма",
+      "интеллект": "Способность мыслить и познавать",
+      "программирование": "Создание компьютерных программ",
+      "обезьяна": "Примат, похожий на человека",
+      "электричество": "Форма энергии, ток",
+      "правительство": "Орган управления страной",
+      "фотография": "Изображение, снимок",
+      "телевидение": "Средство массовой информации с экраном",
+      "кинематограф": "Искусство кино",
+      "параллелепипед": "Геометрическое тело, шесть граней",
+      "человечность": "Доброта, гуманность",
+      "архитектура": "Искусство проектировать здания",
+      "лаборатория": "Место для научных опытов",
+      "эксперимент": "Научный опыт, проба",
       "университет": "Высшее учебное заведение"
     };
     function getWordHint(word) {
-      // нормализуем слово (убираем ё для поиска)
       const norm = word.toLowerCase().replace(/ё/g, 'е');
-      if (WORD_HINTS[norm]) return WORD_HINTS[norm];
-      // для остальных слов — общая подсказка
-      return "Это слово из русского языка. Попробуй угадать по буквам!";
+      return WORD_HINTS[norm] || "Это слово из русского языка. Попробуй угадать по буквам!";
     }
 
-    // Нормализация букв: ё -> е
+    // Нормализация
     function normalizeLetter(l) { return l === 'ё' ? 'е' : l; }
     function normalizeWord(word) { return word.split('').map(c => normalizeLetter(c)).join(''); }
-    function getOriginalLetter(originalWord, idx) { return originalWord[idx]; }
 
+    // Состояние игры
     let currentDifficulty = "medium";
-    let currentWord = "";          // оригинальное слово (с ё)
-    let normalizedWord = "";       // слово с заменой ё на е
-    let guessedLetters = new Set(); // храним нормализованные буквы
-    let wrongLetters = new Set();   // нормализованные
-    let maxMistakes = 6;
+    let currentWord = "";
+    let normalizedWord = "";
+    let guessedLetters = new Set();
+    let wrongLetters = new Set();
+    let maxMistakes = 7;
     let hangmanSteps = 0;
     let gameActive = true;
 
-    // Флаги использования подсказок (по одному разу за игру)
     let usedRevealLetter = false;
     let usedRemoveWrong = false;
     let usedHint = false;
 
-    // DOM
+    // DOM элементы
     const wordDisplaySpan = document.getElementById("wordDisplay");
     const mistakesSpan = document.getElementById("mistakesCount");
     const maxMistakesSpan = document.getElementById("maxMistakesSpan");
@@ -621,7 +616,7 @@
     const newGameBtn = document.getElementById("newGameBtn");
     const hangmanArea = document.querySelector(".hangman-area");
 
-    // Центральные уведомления
+    // Уведомления
     function showCenterToast(message, type = "info", duration = 2000) {
       const container = document.getElementById("centerToastContainer");
       const toast = document.createElement("div");
@@ -635,7 +630,7 @@
       }, duration);
     }
 
-    // Получить слово по сложности с учетом диапазона длины
+    // Получение слова по сложности и длине
     function getWordByDifficulty(diff) {
       let pool = WORDS_POOL[diff];
       let minLen = 1, maxLen = 20;
@@ -643,11 +638,33 @@
       else if (diff === "medium") { minLen = 5; maxLen = 8; }
       else { minLen = 8; maxLen = 30; }
       const filtered = pool.filter(w => w.length >= minLen && w.length <= maxLen);
-      if (filtered.length === 0) return pool[0];
-      return filtered[Math.floor(Math.random() * filtered.length)];
+      return filtered.length ? filtered[Math.floor(Math.random() * filtered.length)] : pool[0];
     }
 
-    // Установка сложности (меняем maxMistakes и подбираем слово)
+    function initNewWord() {
+      currentWord = getWordByDifficulty(currentDifficulty);
+      normalizedWord = normalizeWord(currentWord);
+    }
+
+    function resetGame() {
+      initNewWord();
+      guessedLetters.clear();
+      wrongLetters.clear();
+      hangmanSteps = 0;
+      gameActive = true;
+      mistakesSpan.innerText = "0";
+      updateWrongLettersList();
+      drawHangman(0);
+      updateWordDisplay();
+      gameMessageDiv.innerHTML = "✨ Новая игра! Введи букву ✨";
+      refreshKeyboardButtons();
+      usedRevealLetter = false;
+      usedRemoveWrong = false;
+      usedHint = false;
+      updateMenuItemsState();
+      showCenterToast("Новая игра! Удачи!", "info", 1500);
+    }
+
     function setDifficulty(level) {
       currentDifficulty = level;
       let label = "", mistakes = 6;
@@ -665,44 +682,12 @@
       showCenterToast(`Сложность: ${label} (попыток: ${maxMistakes})`, "info", 1500);
     }
 
-    // Инициализация нового слова
-    function initNewWord() {
-      const rawWord = getWordByDifficulty(currentDifficulty);
-      currentWord = rawWord;
-      normalizedWord = normalizeWord(currentWord);
-    }
-
-    function resetGame() {
-      initNewWord();
-      guessedLetters.clear();
-      wrongLetters.clear();
-      hangmanSteps = 0;
-      gameActive = true;
-      mistakesSpan.innerText = "0";
-      updateWrongLettersList();
-      drawHangman(0);
-      updateWordDisplay();
-      gameMessageDiv.innerHTML = "✨ Новая игра! Введи букву ✨";
-      refreshKeyboardButtons();
-      // сброс флагов подсказок
-      usedRevealLetter = false;
-      usedRemoveWrong = false;
-      usedHint = false;
-      // обновляем состояние пунктов меню (убираем disabled)
-      updateMenuItemsState();
-      showCenterToast("Новая игра! Удачи!", "info", 1500);
-    }
-
     function updateWordDisplay() {
       let display = "";
       for (let i = 0; i < currentWord.length; i++) {
         const origChar = currentWord[i];
         const normChar = normalizeLetter(origChar);
-        if (guessedLetters.has(normChar)) {
-          display += origChar + " ";
-        } else {
-          display += "_ ";
-        }
+        display += (guessedLetters.has(normChar) ? origChar : "_") + " ";
       }
       wordDisplaySpan.innerText = display.trim() || "___";
     }
@@ -744,7 +729,7 @@
         gameActive = false;
         winEffect();
         disableKeyboard(true);
-        updateMenuItemsState(); // отключаем пункты меню
+        updateMenuItemsState();
         return true;
       }
       if (hangmanSteps >= maxMistakes && gameActive) {
@@ -784,97 +769,60 @@
       }
     }
 
-    // --- ПОДСКАЗКИ ---
-
-    // 1. Открыть случайную букву
+    // Подсказки
     function revealRandomLetter() {
-      if (!gameActive) {
-        showCenterToast("Игра окончена, начните новую", "warning");
-        return;
-      }
-      if (usedRevealLetter) {
-        showCenterToast("Вы уже использовали эту подсказку в этой игре", "warning");
-        return;
-      }
-      // Найти все ещё не открытые буквы в слове
-      const missingLetters = [];
+      if (!gameActive) { showCenterToast("Игра окончена, начните новую", "warning"); return; }
+      if (usedRevealLetter) { showCenterToast("Вы уже использовали эту подсказку", "warning"); return; }
+      const missing = [];
       for (let i = 0; i < normalizedWord.length; i++) {
         const letter = normalizedWord[i];
-        if (!guessedLetters.has(letter) && !missingLetters.includes(letter)) {
-          missingLetters.push(letter);
-        }
+        if (!guessedLetters.has(letter) && !missing.includes(letter)) missing.push(letter);
       }
-      if (missingLetters.length === 0) {
-        showCenterToast("Все буквы уже открыты! Поздравляю!", "info");
-        return;
-      }
-      const randomLetter = missingLetters[Math.floor(Math.random() * missingLetters.length)];
-      // Применяем угадывание
+      if (missing.length === 0) { showCenterToast("Все буквы уже открыты!", "info"); return; }
+      const randomLetter = missing[Math.floor(Math.random() * missing.length)];
       guessedLetters.add(randomLetter);
       updateWordDisplay();
       animateCorrectLetter();
-      showCenterToast(`🔍 Подсказка: открыта буква "${randomLetter.toUpperCase()}"`, "correct", 2000);
+      showCenterToast(`🔍 Открыта буква "${randomLetter.toUpperCase()}"`, "correct", 2000);
       usedRevealLetter = true;
       updateMenuItemsState();
-      checkGameStatus();
       refreshKeyboardButtons();
+      checkGameStatus();
     }
 
-    // 2. Снять одну неверную букву
     function removeWrongLetter() {
-      if (!gameActive) {
-        showCenterToast("Игра окончена, начните новую", "warning");
-        return;
-      }
-      if (usedRemoveWrong) {
-        showCenterToast("Вы уже использовали эту подсказку в этой игре", "warning");
-        return;
-      }
-      if (wrongLetters.size === 0) {
-        showCenterToast("Нет неверных букв для удаления", "warning");
-        return;
-      }
-      // Выбираем случайную неверную букву и удаляем
-      const wrongArray = Array.from(wrongLetters);
-      const toRemove = wrongArray[Math.floor(Math.random() * wrongArray.length)];
+      if (!gameActive) { showCenterToast("Игра окончена, начните новую", "warning"); return; }
+      if (usedRemoveWrong) { showCenterToast("Вы уже использовали эту подсказку", "warning"); return; }
+      if (wrongLetters.size === 0) { showCenterToast("Нет неверных букв для удаления", "warning"); return; }
+      const toRemove = Array.from(wrongLetters)[Math.floor(Math.random() * wrongLetters.size)];
       wrongLetters.delete(toRemove);
-      // Уменьшаем счётчик ошибок, если он больше 0
       if (hangmanSteps > 0) {
         hangmanSteps--;
         mistakesSpan.innerText = hangmanSteps;
         drawHangman(hangmanSteps);
       }
       updateWrongLettersList();
-      showCenterToast(`✖️ Удалена неверная буква "${toRemove.toUpperCase()}"`, "success", 2000);
+      showCenterToast(`✖️ Удалена буква "${toRemove.toUpperCase()}"`, "success", 2000);
       usedRemoveWrong = true;
       updateMenuItemsState();
-      refreshKeyboardButtons(); // обновляем клавиатуру (буква снова доступна)
-      checkGameStatus(); // может быть, игра уже выиграна? нет, но проверка не повредит
+      refreshKeyboardButtons();
+      checkGameStatus();
     }
 
-    // 3. Подсказка (определение)
     function showWordHint() {
-      if (!gameActive) {
-        showCenterToast("Игра окончена, начните новую", "warning");
-        return;
-      }
-      if (usedHint) {
-        showCenterToast("Вы уже использовали подсказку в этой игре", "warning");
-        return;
-      }
+      if (!gameActive) { showCenterToast("Игра окончена, начните новую", "warning"); return; }
+      if (usedHint) { showCenterToast("Вы уже использовали подсказку", "warning"); return; }
       const hint = getWordHint(currentWord);
       showCenterToast(`💡 Определение: ${hint}`, "info", 4000);
       usedHint = true;
       updateMenuItemsState();
     }
 
-    // Обновление состояния пунктов меню (disabled, если игра не активна или подсказка использована)
     function updateMenuItemsState() {
       const revealItem = document.getElementById("revealLetterItem");
       const removeItem = document.getElementById("removeWrongItem");
       const hintItem = document.getElementById("hintItem");
       const wheelItem = document.getElementById("wheelMenuItem");
-      
       if (!gameActive) {
         revealItem.classList.add("disabled");
         removeItem.classList.add("disabled");
@@ -883,20 +831,17 @@
       } else {
         if (usedRevealLetter) revealItem.classList.add("disabled");
         else revealItem.classList.remove("disabled");
-        
         if (usedRemoveWrong) removeItem.classList.add("disabled");
         else removeItem.classList.remove("disabled");
-        
         if (usedHint) hintItem.classList.add("disabled");
         else hintItem.classList.remove("disabled");
-        
         wheelItem.classList.remove("disabled");
       }
     }
 
     // Клавиатура
-    let keyboardButtons = [];
     const RUSSIAN_ALPHABET = "абвгдежзийклмнопрстуфхцчшщъыьэюя".split("");
+    let keyboardButtons = [];
     function buildKeyboard() {
       const container = document.getElementById("keyboardContainer");
       container.innerHTML = "";
@@ -919,12 +864,13 @@
     function refreshKeyboardButtons() {
       keyboardButtons.forEach(btn => {
         const letter = btn.getAttribute("data-letter");
-        if (guessedLetters.has(letter) || wrongLetters.has(letter)) { btn.disabled = true; btn.classList.add("disabled"); }
-        else { btn.disabled = false; btn.classList.remove("disabled"); }
+        btn.disabled = guessedLetters.has(letter) || wrongLetters.has(letter);
+        if (btn.disabled) btn.classList.add("disabled");
+        else btn.classList.remove("disabled");
       });
     }
     function disableKeyboard(disabled) {
-      keyboardButtons.forEach(btn => { btn.disabled = disabled; if(disabled) btn.classList.add("disabled"); else if(!(guessedLetters.has(btn.getAttribute("data-letter")) || wrongLetters.has(btn.getAttribute("data-letter")))) btn.classList.remove("disabled"); });
+      keyboardButtons.forEach(btn => { btn.disabled = disabled; if(disabled) btn.classList.add("disabled"); });
     }
 
     // Физическая клавиатура
@@ -940,18 +886,14 @@
       }
     }
 
-    // ----- КОЛЕСО ФОРТУНЫ -----
+    // Колесо фортуны
     let wheelCanvas = document.getElementById("wheelCanvas");
     let wheelCtx = wheelCanvas.getContext("2d");
     let spinning = false;
     let wheelSegments = [];
     let currentAngle = 0;
     function initWheel() {
-      const available = RUSSIAN_ALPHABET.filter(l => !guessedLetters.has(l) && !wrongLetters.has(l));
-      if (available.length === 0) {
-        wheelSegments = []; return;
-      }
-      wheelSegments = available;
+      wheelSegments = RUSSIAN_ALPHABET.filter(l => !guessedLetters.has(l) && !wrongLetters.has(l));
       drawWheel();
     }
     function drawWheel() {
@@ -979,7 +921,6 @@
         wheelCtx.fillText(wheelSegments[i].toUpperCase(), radius-20, 8);
         wheelCtx.restore();
       }
-      // стрелка
       wheelCtx.beginPath();
       wheelCtx.moveTo(size-10, center-8);
       wheelCtx.lineTo(size, center);
@@ -987,18 +928,11 @@
       wheelCtx.fillStyle = "#ffaa33";
       wheelCtx.fill();
     }
-
     async function spinWheel() {
       if (spinning) return;
       const available = RUSSIAN_ALPHABET.filter(l => !guessedLetters.has(l) && !wrongLetters.has(l));
-      if (available.length === 0) {
-        showCenterToast("Все буквы уже использованы! Нечего крутить.", "warning", 2000);
-        return;
-      }
-      if (!gameActive) {
-        showCenterToast("Игра окончена, начните новую игру", "warning");
-        return;
-      }
+      if (available.length === 0) { showCenterToast("Все буквы уже использованы!", "warning", 2000); return; }
+      if (!gameActive) { showCenterToast("Игра окончена, начните новую игру", "warning"); return; }
       spinning = true;
       const spinDuration = 1500;
       const startTime = performance.now();
@@ -1006,7 +940,6 @@
       const fullRotations = 6 * Math.PI * 2;
       const randomFinalOffset = Math.random() * Math.PI * 2;
       const finalAngle = startAngle + fullRotations + randomFinalOffset;
-      
       function animateSpin(now) {
         const elapsed = now - startTime;
         let t = Math.min(1, elapsed / spinDuration);
@@ -1029,61 +962,45 @@
       requestAnimationFrame(animateSpin);
     }
 
-    // Бургер-меню и обработчики
-    const burgerIcon = document.getElementById("burgerIcon");
-    const dropdown = document.getElementById("dropdownMenu");
-    const wheelMenuItem = document.getElementById("wheelMenuItem");
-    const revealLetterItem = document.getElementById("revealLetterItem");
-    const removeWrongItem = document.getElementById("removeWrongItem");
-    const hintItem = document.getElementById("hintItem");
-    const wheelModal = document.getElementById("wheelModal");
-    const closeWheel = document.getElementById("closeWheel");
-    const spinBtn = document.getElementById("spinWheelBtn");
-
-    burgerIcon.addEventListener("click", (e) => {
-      e.stopPropagation();
-      dropdown.classList.toggle("show");
-    });
-    document.addEventListener("click", (e) => {
-      if (!burgerIcon.contains(e.target)) dropdown.classList.remove("show");
-    });
-    wheelMenuItem.addEventListener("click", () => {
-      dropdown.classList.remove("show");
-      if (!gameActive) { showCenterToast("Игра не активна, начните новую", "warning"); return; }
-      initWheel();
-      drawWheel();
-      wheelModal.classList.add("show");
-    });
-    revealLetterItem.addEventListener("click", () => {
-      dropdown.classList.remove("show");
-      revealRandomLetter();
-    });
-    removeWrongItem.addEventListener("click", () => {
-      dropdown.classList.remove("show");
-      removeWrongLetter();
-    });
-    hintItem.addEventListener("click", () => {
-      dropdown.classList.remove("show");
-      showWordHint();
-    });
-    closeWheel.addEventListener("click", () => wheelModal.classList.remove("show"));
-    spinBtn.addEventListener("click", () => spinWheel());
-
-    // Частицы (упрощённая версия для фона)
+    // Частицы (разноцветные)
     function initParticles() {
       const canvas = document.getElementById('particleCanvas');
       if(!canvas) return;
       const ctxP = canvas.getContext('2d');
       let particles = [], width, height;
       function resizeCanvas() { width = window.innerWidth; height = Math.max(document.body.scrollHeight, window.innerHeight); canvas.width = width; canvas.height = height; }
-      class Particle { constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.size = Math.random() * 2.2 + 0.4; this.speedX = (Math.random() - 0.5) * 0.3; this.speedY = (Math.random() - 0.5) * 0.2; this.color = `hsl(${Math.random() * 60 + 180}, 70%, 65%)`; } update() { this.x += this.speedX; this.y += this.speedY; if(this.x < 0) this.x = width; if(this.x > width) this.x = 0; if(this.y < 0) this.y = height; if(this.y > height) this.y = 0; } draw() { ctxP.beginPath(); ctxP.arc(this.x, this.y, this.size, 0, Math.PI*2); ctxP.fillStyle = this.color; ctxP.fill(); } }
-      function init() { resizeCanvas(); particles = []; for(let i=0;i<130;i++) particles.push(new Particle()); }
+      class Particle {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.size = Math.random() * 2.5 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.5;
+          this.speedY = (Math.random() - 0.5) * 0.3;
+          this.color = `hsl(${Math.random() * 360}, 80%, 65%)`;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if(this.x < 0) this.x = width;
+          if(this.x > width) this.x = 0;
+          if(this.y < 0) this.y = height;
+          if(this.y > height) this.y = 0;
+        }
+        draw() {
+          ctxP.beginPath();
+          ctxP.arc(this.x, this.y, this.size, 0, Math.PI*2);
+          ctxP.fillStyle = this.color;
+          ctxP.fill();
+        }
+      }
+      function init() { resizeCanvas(); particles = []; for(let i=0;i<150;i++) particles.push(new Particle()); }
       function animate() { ctxP.clearRect(0, 0, width, height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animate); }
       window.addEventListener('resize', () => { resizeCanvas(); init(); });
       window.addEventListener('scroll', () => { resizeCanvas(); });
       init(); animate();
     }
 
+    // Инициализация UI и обработчиков
     function start() {
       buildKeyboard();
       setDifficulty("medium");
@@ -1092,8 +1009,28 @@
       drawHangman(0);
       updateMenuItemsState();
     }
-    start();
+
+    // Обработчики бургер-меню
+    const burgerIcon = document.getElementById("burgerIcon");
+    const dropdown = document.getElementById("dropdownMenu");
+    document.getElementById("wheelMenuItem").addEventListener("click", () => {
+      dropdown.classList.remove("show");
+      if (!gameActive) { showCenterToast("Игра не активна, начните новую", "warning"); return; }
+      initWheel();
+      drawWheel();
+      document.getElementById("wheelModal").classList.add("show");
+    });
+    document.getElementById("revealLetterItem").addEventListener("click", () => { dropdown.classList.remove("show"); revealRandomLetter(); });
+    document.getElementById("removeWrongItem").addEventListener("click", () => { dropdown.classList.remove("show"); removeWrongLetter(); });
+    document.getElementById("hintItem").addEventListener("click", () => { dropdown.classList.remove("show"); showWordHint(); });
+    document.getElementById("closeWheel").addEventListener("click", () => document.getElementById("wheelModal").classList.remove("show"));
+    document.getElementById("spinWheelBtn").addEventListener("click", () => spinWheel());
+    burgerIcon.addEventListener("click", (e) => { e.stopPropagation(); dropdown.classList.toggle("show"); });
+    document.addEventListener("click", (e) => { if (!burgerIcon.contains(e.target)) dropdown.classList.remove("show"); });
+    document.querySelectorAll(".difficulty-btn").forEach(btn => btn.addEventListener("click", () => setDifficulty(btn.getAttribute("data-diff"))));
     newGameBtn.addEventListener("click", () => resetGame());
+
+    start();
   </script>
 </body>
 </html>
