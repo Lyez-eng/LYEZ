@@ -239,10 +239,10 @@
       transform: scale(0.97);
     }
 
-    /* бургер-меню - повышенный z-index */
+    /* бургер-меню - повышенный z-index и контекст наложения */
     .burger-menu-wrapper {
       position: relative;
-      z-index: 2001;
+      z-index: 2000;
     }
 
     .burger-icon {
@@ -272,9 +272,10 @@
       border-radius: 16px;
       padding: 8px 0;
       min-width: 220px;
-      z-index: 2002;
+      z-index: 2001;
       display: none;
       flex-direction: column;
+      pointer-events: auto;
     }
 
     .dropdown-menu.show {
@@ -962,7 +963,7 @@
       requestAnimationFrame(animateSpin);
     }
 
-    // Частицы (разноцветные)
+    // Частицы (разноцветные, оптимизированные)
     function initParticles() {
       const canvas = document.getElementById('particleCanvas');
       if(!canvas) return;
