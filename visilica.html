@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Виселица | Lyez Game</title>
+  <meta name="description" content="Классическая игра Виселица в стиле Lyez. Угадывай слова, выбирай сложность и проверь свою интуицию.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    :root {
+      --primary: #ffffff;
+      --bg: #000000;
+      --card-bg: rgba(20, 20, 20, 0.85);
+      --grid-color: rgba(255, 255, 255, 0.08);
+      --accent: #00ffcc;
+      --error: #ff3366;
+      --correct: #33ff99;
+      --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--primary);
+      font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      opacity: 0;
+      animation: fadeBody 1s ease forwards;
+    }
+
+    @keyframes fadeBody {
+      to { opacity: 1; }
+    }
+
+    /* Параллакс сетка и слои (как в основном сайте) */
+    .parallax-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .layer-1 {
+      background: 
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 20px 20px,
+        linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 20px 20px;
+      animation: gridSlowMove 24s infinite linear;
+    }
+
+    .layer-2 {
+      background: radial-gradient(circle at 30% 40%, rgba(100, 100, 150, 0.08) 0%, transparent 60%),
+                  radial-gradient(circle at 70% 85%, rgba(150, 150, 200, 0.05) 0%, transparent 70%);
+      animation: slowDrift 18s infinite alternate;
+    }
+
+    @keyframes gridSlowMove {
+      0% { transform: translate(0,0); }
+      100% { transform: translate(20px, 20px); }
+    }
+
+    @keyframes slowDrift {
+      0% { transform: scale(1) translate(0,0); }
+      100% { transform: scale(1.05) translate(-15px, -10px); }
+    }
+
+    canvas#particleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* основной контейнер */
+    .game-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+      position: relative;
+      z-index: 2;
+      backdrop-filter: blur(3px);
+    }
+
+    /* шапка с кнопкой меню */
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding-bottom: 16px;
+    }
+
+    .back-home {
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      border: var(--glass-border);
+      padding: 10px 20px;
+      border-radius: 40px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      font-size: 0.95rem;
+    }
+
+    .back-home:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-4px);
+      box-shadow: 0 0 12px rgba(0,255,200,0.3);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      letter-spacing: 3px;
+      text-shadow: 0 0 8px cyan;
+      background: linear-gradient(135deg, #fff, #aaa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* панель сложности + управление */
+    .controls-panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border-radius: 28px;
+      padding: 15px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    .difficulty-selector {
+      display: flex;
+      gap: 12px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 12px;
+      border-radius: 60px;
+    }
+
+    .difficulty-btn {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      font-weight: bold;
+      padding: 8px 18px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .difficulty-btn.active {
+      background: var(--primary);
+      color: black;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .game-btn {
+      background: rgba(20,20,20,0.9);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 22px;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .game-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(0.97);
+    }
+
+    /* основная игровая зона */
+    .game-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+
+    .hangman-area {
+      flex: 1.2;
+      min-width: 260px;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      border-radius: 32px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    canvas#hangmanCanvas {
+      background: #010101;
+      border-radius: 28px;
+      width: 100%;
+      max-width: 280px;
+      height: auto;
+      box-shadow: 0 0 20px rgba(0,255,255,0.1);
+    }
+
+    .word-panel {
+      flex: 2;
+      min-width: 280px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      border-radius: 32px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .word-display {
+      font-size: 2.2rem;
+      letter-spacing: 12px;
+      text-align: center;
+      font-family: monospace;
+      font-weight: bold;
+      background: #0a0a0a;
+      padding: 20px 10px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      word-break: break-all;
+      transition: all 0.2s;
+    }
+
+    .info-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 18px;
+      border-radius: 40px;
+    }
+
+    .wrong-letters {
+      color: #ff9f6e;
+      background: rgba(0,0,0,0.5);
+      padding: 12px;
+      border-radius: 28px;
+      margin: 15px 0;
+      font-size: 1.2rem;
+    }
+
+    /* клавиатура */
+    .keyboard {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .key {
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      width: 48px;
+      height: 48px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: 0.1s linear;
+      text-transform: uppercase;
+    }
+
+    .key:active {
+      transform: scale(0.92);
+      background: #2a2a2a;
+    }
+
+    .key.disabled, .key:disabled {
+      opacity: 0.35;
+      transform: none;
+      cursor: not-allowed;
+      filter: grayscale(0.3);
+    }
+
+    .message-area {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      min-height: 55px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 45px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+
+    @media (max-width: 700px) {
+      .game-container { padding: 15px; }
+      .word-display { font-size: 1.4rem; letter-spacing: 6px; }
+      .key { width: 40px; height: 40px; font-size: 1rem; }
+      .difficulty-btn { padding: 4px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="parallax-layer layer-1"></div>
+  <div class="parallax-layer layer-2"></div>
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="game-container">
+    <div class="game-header">
+      <a href="index.html" class="back-home">← На главное меню</a>
+      <h1>ВИСЕЛИЦА</h1>
+      <div style="width: 70px;"></div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="difficulty-selector">
+        <button class="difficulty-btn" data-diff="easy">🍃 Лёгкий</button>
+        <button class="difficulty-btn active" data-diff="medium">⚡ Средний</button>
+        <button class="difficulty-btn" data-diff="hard">🔥 Сложный</button>
+      </div>
+      <div class="action-buttons">
+        <button class="game-btn" id="newGameBtn">🔄 Новая игра</button>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <div class="hangman-area">
+        <canvas id="hangmanCanvas" width="300" height="320" style="width:100%; max-width:300px; height:auto;"></canvas>
+      </div>
+      <div class="word-panel">
+        <div class="word-display" id="wordDisplay">_ _ _ _ _</div>
+        <div class="info-stats">
+          <span>❌ Ошибок: <strong id="mistakesCount">0</strong> / 6</span>
+          <span>📖 Сложность: <span id="difficultyLabel">Средний</span></span>
+        </div>
+        <div class="wrong-letters">
+          🚫 Неверные буквы: <span id="wrongLettersList">—</span>
+        </div>
+        <div class="message-area" id="gameMessage"></div>
+      </div>
+    </div>
+
+    <!-- виртуальная клавиатура (русские буквы) -->
+    <div class="keyboard" id="keyboardContainer"></div>
+    <footer>Lyez — классика с душой киберспорта</footer>
+  </div>
+
+  <script>
+    // ------------------- БОГАТАЯ БАЗА СЛОВ (30+ вариаций) ------------------
+    const WORDS_BY_DIFFICULTY = {
+      easy: [
+        "кот", "дом", "лес", "мир", "сок", "год", "час", "брат", "слон", "волк",
+        "дверь", "мышь", "ночь", "день", "путь", "луна", "снег", "дождь", "рука", "нога",
+        "книга", "стол", "стул", "окно", "звезда", "песня", "река", "гора", "поле", "лето"
+      ],
+      medium: [
+        "собака", "корова", "машина", "улица", "работа", "дерево", "солнце", "город", "школа",
+        "учитель", "комната", "завтрак", "холодильник", "телефон", "компьютер", "планета",
+        "история", "молния", "ракета", "библиотека", "корабль", "самолет", "животное", "погода",
+        "радуга", "квартира", "мечта", "радость", "дружба", "секрет"
+      ],
+      hard: [
+        "автомобиль", "велосипед", "достопримечательность", "интеллект", "программирование",
+        "обезьяна", "электричество", "правительство", "универмаг", "фотография", "телевидение",
+        "воображение", "оригинальный", "конфигурация", "реставрация", "библиография", "квалификация",
+        "трансформация", "авиастроение", "кинематограф", "параллелепипед", "человечность", "дезоксирибонуклеиновая"
+      ]
+    };
+
+    // русский алфавит (33 буквы) для клавиатуры
+    const RUSSIAN_ALPHABET = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".split("");
+
+    let currentDifficulty = "medium";   // easy, medium, hard
+    let currentWord = "";
+    let guessedLetters = new Set();      // угаданные буквы (в слове)
+    let wrongLetters = new Set();        // неверные попытки
+    let maxMistakes = 6;
+    let gameActive = true;
+    let hangmanSteps = 0;                // количество ошибок (0-6)
+
+    // DOM элементы
+    const wordDisplaySpan = document.getElementById("wordDisplay");
+    const mistakesSpan = document.getElementById("mistakesCount");
+    const wrongLettersSpan = document.getElementById("wrongLettersList");
+    const gameMessageDiv = document.getElementById("gameMessage");
+    const hangmanCanvas = document.getElementById("hangmanCanvas");
+    const ctx = hangmanCanvas.getContext("2d");
+    const difficultyLabelSpan = document.getElementById("difficultyLabel");
+    const newGameBtn = document.getElementById("newGameBtn");
+
+    // --- Отрисовка виселицы (стильный неоновый контур)---
+    function drawHangman(errors) {
+      ctx.clearRect(0, 0, hangmanCanvas.width, hangmanCanvas.height);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 0;
+      // стойка (всегда рисуем)
+      ctx.beginPath();
+      ctx.moveTo(50, 280);
+      ctx.lineTo(250, 280);
+      ctx.moveTo(100, 280);
+      ctx.lineTo(100, 40);
+      ctx.lineTo(200, 40);
+      ctx.lineTo(200, 70);
+      ctx.stroke();
+      
+      if(errors === 0) return;
+      
+      // голова
+      if(errors >= 1) {
+        ctx.beginPath();
+        ctx.arc(200, 95, 22, 0, Math.PI*2);
+        ctx.stroke();
+      }
+      // тело
+      if(errors >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(200, 117);
+        ctx.lineTo(200, 190);
+        ctx.stroke();
+      }
+      // левая рука
+      if(errors >= 3) {
+        ctx.beginPath();
+        ctx.moveTo(200, 140);
+        ctx.lineTo(170, 165);
+        ctx.stroke();
+      }
+      // правая рука
+      if(errors >= 4) {
+        ctx.beginPath();
+        ctx.moveTo(200, 140);
+        ctx.lineTo(230, 165);
+        ctx.stroke();
+      }
+      // левая нога
+      if(errors >= 5) {
+        ctx.beginPath();
+        ctx.moveTo(200, 190);
+        ctx.lineTo(175, 235);
+        ctx.stroke();
+      }
+      // правая нога
+      if(errors >= 6) {
+        ctx.beginPath();
+        ctx.moveTo(200, 190);
+        ctx.lineTo(225, 235);
+        ctx.stroke();
+      }
+      // дополнительный глитч-эффект при близкой смерти
+      if(errors === 5 || errors === 6) {
+        ctx.beginPath();
+        ctx.strokeStyle = "#ff3366";
+        ctx.lineWidth = 2.5;
+        ctx.arc(200, 95, 23, 0, Math.PI*2);
+        ctx.stroke();
+      }
+    }
+
+    // отображение загаданного слова (маскировка)
+    function updateWordDisplay() {
+      let display = "";
+      for(let char of currentWord) {
+        if(guessedLetters.has(char)) {
+          display += char + " ";
+        } else {
+          display += "_ ";
+        }
+      }
+      wordDisplaySpan.innerText = display.trim() || "___";
+    }
+
+    // проверка победы / поражения
+    function checkGameStatus() {
+      const allLettersGuessed = [...currentWord].every(letter => guessedLetters.has(letter));
+      if(allLettersGuessed && gameActive) {
+        gameActive = false;
+        gameMessageDiv.innerHTML = "🎉 ПОБЕДА! 🎉 <span style='color:#33ff99'>Ты спас висельника!</span>";
+        disableKeyboard(true);
+        showSmartToast("Поздравляем! Вы угадали слово!", "success");
+        return true;
+      }
+      if(hangmanSteps >= maxMistakes && gameActive) {
+        gameActive = false;
+        gameMessageDiv.innerHTML = `💀 ПОРАЖЕНИЕ! Загадано слово: <strong style="color:#ff9966">${currentWord.toUpperCase()}</strong> 💀`;
+        disableKeyboard(true);
+        showSmartToast(`Вы проиграли. Слово: ${currentWord}`, "error");
+        return true;
+      }
+      return false;
+    }
+
+    // обработка попытки буквы
+    function guessLetter(letter) {
+      if(!gameActive) return false;
+      letter = letter.toLowerCase();
+      if(guessedLetters.has(letter) || wrongLetters.has(letter)) {
+        showSmartToast(`Буква "${letter}" уже была`, "warning", 1200);
+        return false;
+      }
+      
+      if(currentWord.includes(letter)) {
+        guessedLetters.add(letter);
+        updateWordDisplay();
+        showSmartToast(`✅ Есть буква "${letter}"!`, "correct", 1000);
+        // анимация успеха
+        const wordBox = document.querySelector(".word-display");
+        wordBox.style.transform = "scale(1.02)";
+        setTimeout(() => wordBox.style.transform = "", 150);
+        checkGameStatus();
+        return true;
+      } else {
+        wrongLetters.add(letter);
+        hangmanSteps++;
+        mistakesSpan.innerText = hangmanSteps;
+        updateWrongLettersList();
+        drawHangman(hangmanSteps);
+        showSmartToast(`❌ Нет буквы "${letter}"`, "error", 1200);
+        // анимация тряски
+        const hangArea = document.querySelector(".hangman-area");
+        hangArea.style.transform = "translateX(4px)";
+        setTimeout(() => hangArea.style.transform = "", 100);
+        checkGameStatus();
+        return false;
+      }
+    }
+
+    function updateWrongLettersList() {
+      const arr = Array.from(wrongLetters).join(", ");
+      wrongLettersSpan.innerText = arr.length ? arr : "—";
+    }
+
+    // Выбор случайного слова на основе сложности
+    function getRandomWordByDifficulty() {
+      let pool = WORDS_BY_DIFFICULTY[currentDifficulty];
+      if(currentDifficulty === "easy") pool = WORDS_BY_DIFFICULTY.easy;
+      else if(currentDifficulty === "medium") pool = WORDS_BY_DIFFICULTY.medium;
+      else pool = WORDS_BY_DIFFICULTY.hard;
+      
+      // дополнительная защита: если массив пуст (не бывает) 
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      return pool[randomIndex];
+    }
+
+    // полный сброс игры
+    function resetGame(keepDifficulty = true) {
+      currentWord = getRandomWordByDifficulty();
+      guessedLetters.clear();
+      wrongLetters.clear();
+      hangmanSteps = 0;
+      gameActive = true;
+      mistakesSpan.innerText = "0";
+      updateWrongLettersList();
+      drawHangman(0);
+      updateWordDisplay();
+      gameMessageDiv.innerHTML = "✨ Новая игра! Введи букву ✨";
+      enableKeyboard(true);
+      // обновить внешний вид клавиатуры (сбросить disabled)
+      refreshKeyboardButtons();
+    }
+
+    // переключить сложность
+    function setDifficulty(level) {
+      currentDifficulty = level;
+      let label = "";
+      if(level === "easy") label = "Лёгкий";
+      else if(level === "medium") label = "Средний";
+      else label = "Сложный";
+      difficultyLabelSpan.innerText = label;
+      
+      // обновить активную кнопку UI
+      document.querySelectorAll(".difficulty-btn").forEach(btn => {
+        if(btn.getAttribute("data-diff") === level) btn.classList.add("active");
+        else btn.classList.remove("active");
+      });
+      
+      resetGame(true);
+      showSmartToast(`Сложность: ${label}. Слова стали ${level === "easy" ? "короче" : level === "hard" ? "длиннее" : "интереснее"}`, "info");
+    }
+
+    // --- КЛАВИАТУРА (динамическая генерация) ---
+    let keyboardButtons = [];
+    function buildKeyboard() {
+      const container = document.getElementById("keyboardContainer");
+      container.innerHTML = "";
+      keyboardButtons = [];
+      RUSSIAN_ALPHABET.forEach(letter => {
+        const btn = document.createElement("button");
+        btn.innerText = letter.toUpperCase();
+        btn.classList.add("key");
+        btn.setAttribute("data-letter", letter);
+        btn.addEventListener("click", () => {
+          if(!gameActive) {
+            showSmartToast("Игра окончена, начните новую", "warning");
+            return;
+          }
+          if(guessedLetters.has(letter) || wrongLetters.has(letter)) {
+            showSmartToast(`Буква "${letter}" уже использовалась`, "warning", 1000);
+            return;
+          }
+          guessLetter(letter);
+          refreshKeyboardButtons();
+        });
+        container.appendChild(btn);
+        keyboardButtons.push(btn);
+      });
+    }
+    
+    function refreshKeyboardButtons() {
+      keyboardButtons.forEach(btn => {
+        const letter = btn.getAttribute("data-letter");
+        if(guessedLetters.has(letter) || wrongLetters.has(letter)) {
+          btn.disabled = true;
+          btn.classList.add("disabled");
+        } else {
+          btn.disabled = false;
+          btn.classList.remove("disabled");
+        }
+      });
+    }
+    
+    function disableKeyboard(disabled) {
+      keyboardButtons.forEach(btn => {
+        if(disabled) {
+          btn.disabled = true;
+          btn.classList.add("disabled");
+        } else {
+          if(!(guessedLetters.has(btn.getAttribute("data-letter")) || wrongLetters.has(btn.getAttribute("data-letter")))) {
+            btn.disabled = false;
+            btn.classList.remove("disabled");
+          }
+        }
+      });
+    }
+    
+    function enableKeyboard(resetAll) {
+      if(resetAll) {
+        refreshKeyboardButtons();
+      } else {
+        keyboardButtons.forEach(btn => {
+          const letter = btn.getAttribute("data-letter");
+          if(!guessedLetters.has(letter) && !wrongLetters.has(letter)) {
+            btn.disabled = false;
+            btn.classList.remove("disabled");
+          }
+        });
+      }
+    }
+    
+    // ----------  СМАРТ TOAST (как на главной) ----------
+    function showSmartToast(message, type = "info", duration = 2000) {
+      let toastContainer = document.querySelector(".toast-container-game");
+      if(!toastContainer) {
+        toastContainer = document.createElement("div");
+        toastContainer.className = "toast-container-game";
+        toastContainer.style.cssText = "position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;";
+        document.body.appendChild(toastContainer);
+      }
+      const toast = document.createElement("div");
+      let bgColor = "#2196F3";
+      if(type === "success") bgColor = "#4CAF50";
+      if(type === "error") bgColor = "#f44336";
+      if(type === "warning") bgColor = "#ff9800";
+      if(type === "correct") bgColor = "#33ff99";
+      toast.style.cssText = `background:${bgColor}; color:white; padding:10px 20px; border-radius:40px; font-weight:bold; box-shadow:0 4px 12px black; transform:translateX(400px); opacity:0; transition:all 0.2s ease; margin-bottom:5px; backdrop-filter:blur(4px);`;
+      toast.innerText = message;
+      toastContainer.appendChild(toast);
+      setTimeout(() => { toast.style.transform = "translateX(0)"; toast.style.opacity = "1"; }, 10);
+      setTimeout(() => {
+        toast.style.transform = "translateX(400px)";
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    // --- физическая клавиатура (поддержка) ---
+    function handlePhysicalKey(e) {
+      if(!gameActive) return;
+      let key = e.key.toLowerCase();
+      if(key.length === 1 && /[а-яё]/i.test(key)) {
+        e.preventDefault();
+        const letter = key;
+        if(guessedLetters.has(letter) || wrongLetters.has(letter)) {
+          showSmartToast(`Буква "${letter}" уже была`, "warning", 1000);
+          return;
+        }
+        guessLetter(letter);
+        refreshKeyboardButtons();
+      }
+    }
+    
+    // --- ИНИЦИАЛИЗАЦИЯ и частицы (копия из главного стиля)---
+    function initParticles() {
+      const canvas = document.getElementById('particleCanvas');
+      if(!canvas) return;
+      const ctxP = canvas.getContext('2d');
+      let particles = [];
+      let width, height;
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = Math.max(document.body.scrollHeight, window.innerHeight);
+        canvas.width = width;
+        canvas.height = height;
+      }
+      class Particle {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.size = Math.random() * 2.2 + 0.4;
+          this.speedX = (Math.random() - 0.5) * 0.3;
+          this.speedY = (Math.random() - 0.5) * 0.2;
+          this.color = `hsl(${Math.random() * 60 + 180}, 70%, 65%)`;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if(this.x < 0) this.x = width;
+          if(this.x > width) this.x = 0;
+          if(this.y < 0) this.y = height;
+          if(this.y > height) this.y = 0;
+        }
+        draw() {
+          ctxP.beginPath();
+          ctxP.arc(this.x, this.y, this.size, 0, Math.PI*2);
+          ctxP.fillStyle = this.color;
+          ctxP.fill();
+        }
+      }
+      function init() {
+        resizeCanvas();
+        particles = [];
+        for(let i=0;i<130;i++) particles.push(new Particle());
+      }
+      function animate() {
+        ctxP.clearRect(0, 0, width, height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+      }
+      window.addEventListener('resize', () => { resizeCanvas(); init(); });
+      window.addEventListener('scroll', () => { resizeCanvas(); });
+      init();
+      animate();
+    }
+
+    // --- события UI ---
+    document.querySelectorAll(".difficulty-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const diff = btn.getAttribute("data-diff");
+        setDifficulty(diff);
+      });
+    });
+    
+    newGameBtn.addEventListener("click", () => {
+      resetGame();
+    });
+    
+    // старт игры
+    function startGame() {
+      buildKeyboard();
+      setDifficulty("medium");   // по умолчанию средний
+      window.addEventListener("keydown", handlePhysicalKey);
+      initParticles();
+      drawHangman(0);
+    }
+    
+    // дополнительная анимация и подгонка canvas
+    function resizeHangmanCanvas() {
+      const container = document.querySelector(".hangman-area");
+      const canvasEl = hangmanCanvas;
+      const maxWidth = container.clientWidth - 20;
+      if(maxWidth < 280) canvasEl.style.width = `${maxWidth}px`;
+      else canvasEl.style.width = "280px";
+    }
+    window.addEventListener("resize", () => resizeHangmanCanvas());
+    
+    startGame();
+  </script>
+</body>
+</html>
