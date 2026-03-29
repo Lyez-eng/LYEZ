@@ -732,7 +732,8 @@
         <span class="menu-icon">›</span>
       </button>
       <div class="submenu" id="supportSubmenu">
-        <a href="#" onclick="showLisSkinsModal()">🦊 Lis Skins</a>
+        <a href="#" onclick="showLisSkinsModal()">🦊 Lis-Skins</a>
+        <a href="#" onclick="showAimMarketModal()">🎯 Aim-Market</a>
         <a href="https://steamcommunity.com/tradeoffer/new/?partner=1913182237&token=AyuNtjhd" target="_blank">🔄 Trade</a>
         <a href="#" onclick="showDonateModal()">💳 My number for donate</a>
       </div>
@@ -820,7 +821,16 @@
     <br>
     <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
   </div>
-
+  
+  <div id="AimMarketModal()" class="modal modal-large">
+    <h2 style="margin-top:0;">🎯 Aim-Market</h2>
+    <p class="modal-description">
+      Лучший сайт для покупки и продажи скинов CS2 с быстрой доставкой и лучшими ценами на рынке.
+    </p>
+    <button class="modal-btn" onclick="window.open('https://aim.market/p/f08c0081-3ce6-4d20-bfb7-4df08f303828', '_blank')">Перейти на сайт</button>
+    <br>
+    <button class="modal-btn" onclick="closeAllModals()">Закрыть</button>
+  </div>
   <script>
     window.addEventListener('load', () => {
       document.body.classList.add('loaded');
