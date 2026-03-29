@@ -433,17 +433,22 @@
   <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    // ==================== ПЛЕЙЛИСТ ====================
+    // ==================== ПЛЕЙЛИСТ (исправленные ID YouTube) ====================
     // Поддерживаем: объекты с type 'local' (src) или 'youtube' (videoId)
+    // Для YouTube теперь используем только короткие ID, а не полные ссылки
     const videoLibrary = [
-      { name: "?", type: "youtube", videoId: "https://www.youtube.com/watch?v=GEHej0FyknI" },
-      { name: "??", type: "youtube", videoId: "https://www.youtube.com/watch?v=3xuviCyR9uI" },  
-      { name: "???", type: "youtube", videoId: "https://www.youtube.com/watch?v=qZF1JQh2HLE" },
-      { name: "????", type: "youtube", videoId: "https://www.youtube.com/watch?v=VvM1OqbAZqU" },
+      { name: "Момент 1", type: "youtube", videoId: "GEHej0FyknI" },
+      { name: "Момент 2", type: "youtube", videoId: "3xuviCyR9uI" },
+      { name: "Момент 3", type: "youtube", videoId: "qZF1JQh2HLE" },
+      { name: "Момент 4", type: "youtube", videoId: "VvM1OqbAZqU" }
     ];
-    // Для демо, если локальных видео нет, добавляем тестовое (из интернета)
-    if (videoLibrary.length === 0) videoLibrary.push({ name: "Демо момент", type: "local", src: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" });
-
+    
+    // Если нужна поддержка полных ссылок — раскомментируйте функцию и вызывайте её при загрузке
+    // function extractYouTubeId(url) {
+    //   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+    //   return match ? match[1] : url;
+    // }
+    
     let currentIndex = 0;
     let currentPlayer = null;       // либо HTMLVideoElement, либо YouTube Player
     let playerType = null;          // 'local' или 'youtube'
@@ -454,7 +459,11 @@
     let analyser = null;
     let animationFrame = null;
     let volumeLevel = 0;            // 0..1
-
+    
+    // Переменные для ожидания YouTube API
+    let youtubeAPIReady = false;
+    let pendingVideoIndex = null;
+    
     // DOM элементы
     const playPauseBtn = document.getElementById('playPauseBtn');
     const prevBtn = document.getElementById('prevBtn');
@@ -464,7 +473,7 @@
     const timeDisplay = document.getElementById('timeDisplay');
     const titleElem = document.getElementById('currentVideoTitle');
     const playerContainer = document.getElementById('playerContainer');
-
+    
     // ==================== Утилиты ====================
     function showToast(msg, type = 'info', duration = 2500) {
       const container = document.getElementById('toastContainer');
@@ -475,14 +484,14 @@
       setTimeout(() => toast.classList.add('show'), 10);
       setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, duration);
     }
-
+    
     function formatTime(seconds) {
       if (isNaN(seconds)) return "0:00";
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
-
+    
     // ==================== Аудио-анализ (реакция на громкость) ====================
     async function connectAudioAnalyzer(videoElement) {
       if (!videoElement) return;
@@ -511,7 +520,7 @@
         updateVolume();
       } catch (e) { console.warn("AudioContext error:", e); volumeLevel = 0.3; }
     }
-
+    
     // ==================== Частицы с реакцией на громкость ====================
     function initSoundReactiveParticles() {
       const canvas = document.getElementById('particleCanvas');
@@ -574,7 +583,6 @@
               ctx.strokeStyle = `hsla(${(particles[i].hue + particles[j].hue)/2}, 70%, 60%, ${alpha})`;
               ctx.lineWidth = 0.6;
               ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
               ctx.stroke();
             }
           }
@@ -585,7 +593,7 @@
       canvas.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
       resize(); initParticles(); animate();
     }
-
+    
     // ==================== Управление плеером ====================
     function destroyCurrentPlayer() {
       if (ytPlayer && typeof ytPlayer.destroy === 'function') ytPlayer.destroy();
@@ -594,13 +602,23 @@
       playerContainer.innerHTML = '';
       if (audioContext) { audioContext.close().catch(e=>{}); audioContext = null; }
     }
-
+    
+    // Глобальная функция, вызываемая YouTube API после загрузки
+    window.onYouTubeIframeAPIReady = function() {
+      youtubeAPIReady = true;
+      if (pendingVideoIndex !== null) {
+        loadVideo(pendingVideoIndex);
+        pendingVideoIndex = null;
+      }
+    };
+    
     function loadVideo(index) {
       if (!videoLibrary[index]) { showToast("Момент не найден", "error"); return false; }
       destroyCurrentPlayer();
       const item = videoLibrary[index];
       titleElem.innerText = item.name;
       currentIndex = index;
+      
       if (item.type === 'youtube' && item.videoId) {
         playerType = 'youtube';
         const iframeDiv = document.createElement('div');
@@ -608,10 +626,10 @@
         iframeDiv.style.width = '100%';
         iframeDiv.style.height = '100%';
         playerContainer.appendChild(iframeDiv);
-        // инициализация YouTube плеера
+        
         if (window.YT && YT.Player) {
           ytPlayer = new YT.Player('youtubePlayer', {
-            videoId: item.videoId,
+            videoId: item.videoId, // теперь корректный ID
             playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
             events: {
               onReady: (event) => {
@@ -620,20 +638,36 @@
                 playPauseBtn.innerHTML = '▶ Воспр.';
                 updateTimeForYouTube();
                 // Для YouTube используем имитацию громкости (рандомная пульсация)
-                setInterval(() => { if (playerType === 'youtube' && isPlaying) volumeLevel = 0.2 + Math.random() * 0.5; else if(!isPlaying) volumeLevel = 0.1; }, 200);
+                // Можно заменить на реальный анализ, если захотите
+                setInterval(() => { 
+                  if (playerType === 'youtube' && isPlaying) 
+                    volumeLevel = 0.2 + Math.random() * 0.5; 
+                  else if(!isPlaying) volumeLevel = 0.1; 
+                }, 200);
               },
               onStateChange: (e) => {
-                if (e.data === YT.PlayerState.PLAYING) { isPlaying = true; playPauseBtn.innerHTML = '⏸ Пауза'; }
-                else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) { isPlaying = false; playPauseBtn.innerHTML = '▶ Воспр.'; }
+                if (e.data === YT.PlayerState.PLAYING) { 
+                  isPlaying = true; 
+                  playPauseBtn.innerHTML = '⏸ Пауза'; 
+                } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) { 
+                  isPlaying = false; 
+                  playPauseBtn.innerHTML = '▶ Воспр.'; 
+                }
                 if (e.data === YT.PlayerState.ENDED) nextVideo();
+              },
+              onError: (err) => {
+                console.error("YouTube Player Error:", err);
+                showToast("Не удалось загрузить видео. Проверьте ссылку.", "error");
               }
             }
           });
         } else {
-          showToast("YouTube API не загружен, попробуйте обновить", "error");
+          // API ещё не загрузился — ждём
+          showToast("YouTube API загружается, повторите попытку...", "info");
+          pendingVideoIndex = index;
           return false;
         }
-      } else {
+      } else if (item.type === 'local' && item.src) {
         playerType = 'local';
         const videoElem = document.createElement('video');
         videoElem.className = 'local-video';
@@ -654,10 +688,13 @@
         videoElem.addEventListener('canplay', () => { connectAudioAnalyzer(videoElem); });
         if (videoElem.readyState >= 2) connectAudioAnalyzer(videoElem);
         else videoElem.addEventListener('canplay', () => connectAudioAnalyzer(videoElem), { once: true });
+      } else {
+        showToast("Неизвестный тип видео", "error");
+        return false;
       }
       return true;
     }
-
+    
     function updateProgressAndTime() {
       if (!currentPlayer || playerType !== 'local') return;
       const dur = currentPlayer.duration;
@@ -667,6 +704,7 @@
         timeDisplay.innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
       }
     }
+    
     function updateTimeForYouTube() {
       if (!ytPlayer || playerType !== 'youtube') return;
       const interval = setInterval(() => {
@@ -681,6 +719,7 @@
       }, 250);
       window._ytInterval = interval;
     }
+    
     function togglePlayPause() {
       if (!currentPlayer) return;
       if (playerType === 'local') {
@@ -691,9 +730,10 @@
         else ytPlayer.playVideo();
       }
     }
+    
     function nextVideo() { let next = (currentIndex + 1) % videoLibrary.length; loadVideo(next); }
     function prevVideo() { let prev = (currentIndex - 1 + videoLibrary.length) % videoLibrary.length; loadVideo(prev); }
-
+    
     // ==================== Полноэкранный режим (клавиша F) ====================
     function toggleFullscreen() {
       const container = document.querySelector('.video-wrapper');
@@ -704,7 +744,7 @@
         document.exitFullscreen();
       }
     }
-
+    
     // ==================== Жесты (свайп) ====================
     let touchStartX = 0;
     let touchEndX = 0;
@@ -719,7 +759,7 @@
         showToast(diff > 0 ? '← Предыдущий' : 'Следующий →', 'info', 1000);
       }
     });
-
+    
     // ==================== Меню, тема, курсор ====================
     function toggleMenu() { document.getElementById('burgerBtn').classList.toggle('active'); document.getElementById('menu').classList.toggle('active'); }
     function closeMenu() { document.getElementById('burgerBtn').classList.remove('active'); document.getElementById('menu').classList.remove('active'); document.querySelectorAll('.submenu').forEach(s=>s.classList.remove('show')); document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active')); }
@@ -730,7 +770,7 @@
     function initCursor() { const enabled = localStorage.getItem('customCursor') !== 'disabled'; document.getElementById('cursorToggle').checked = enabled; if (enabled) document.body.classList.add('custom-cursor'); else document.body.classList.remove('custom-cursor'); document.getElementById('cursorToggle').addEventListener('change', (e) => { if(e.target.checked) { document.body.classList.add('custom-cursor'); localStorage.setItem('customCursor','enabled'); } else { document.body.classList.remove('custom-cursor'); localStorage.setItem('customCursor','disabled'); } }); }
     document.addEventListener('mousemove', (e) => { if(document.body.classList.contains('custom-cursor')) { const cur = document.querySelector('.custom-cursor-element'); if(cur) { cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px'; } } });
     function buildMomentsSubmenu() { const container = document.getElementById('momentsSubmenu'); container.innerHTML = ''; videoLibrary.forEach((v,i) => { const div = document.createElement('div'); div.className = 'video-item'; div.innerHTML = `🎬 ${v.name}`; div.onclick = () => { loadVideo(i); if(document.getElementById('menu').classList.contains('active')) toggleMenu(); setTimeout(()=>togglePlayPause(), 300); }; container.appendChild(div); }); }
-
+    
     window.addEventListener('load', () => {
       document.body.classList.add('loaded');
       initTheme(); initCursor(); buildMomentsSubmenu(); initSoundReactiveParticles();
