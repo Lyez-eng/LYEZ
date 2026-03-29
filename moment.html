@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.png">
   <link rel="shortcut icon" type="image/x-icon" href="favicon.png">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Moments - Lyez</title>
-  <meta name="description" content="Мои моменты в CS2" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>My Moments — Lyez</title>
+  <meta name="description" content="Видео моменты Lyez в CS2 — с YouTube, жестами и звуковым фоном">
   <style>
+    /* ========== ОСНОВНЫЕ ПЕРЕМЕННЫЕ (как в index.html) ========== */
     :root {
       --primary-color: #ffffff;
       --bg-color: #000000;
       --card-bg: #1a1a1a;
       --grid-color: rgba(255, 255, 255, 0.1);
       --accent-color: #7e57c2;
-      --cursor-size: 20px;
+      --toast-success: #4CAF50;
+      --toast-error: #f44336;
+      --toast-warning: #ff9800;
+      --toast-info: #2196F3;
     }
-    
+
     [data-theme="light"] {
       --primary-color: #000000;
       --bg-color: #ffffff;
@@ -26,426 +33,71 @@
       --accent-color: #5e35b1;
     }
 
-    [data-theme="light"] .cursor-dot {
-      background: #000000;
-    }
-
-    [data-theme="light"] .cursor-circle {
-      border-color: #000000;
-    }
-
-    [data-theme="light"] .cursor-crosshair::before,
-    [data-theme="light"] .cursor-crosshair::after {
-      background: #000000;
-    }
-    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-    
-    /* Кастомный курсор */
-    body.custom-cursor {
-      cursor: none;
-    }
-    
-    .custom-cursor-element {
-      position: fixed;
-      width: var(--cursor-size);
-      height: var(--cursor-size);
-      pointer-events: none;
-      z-index: 9999;
-      mix-blend-mode: difference;
-      transition: transform 0.1s ease;
-      display: none;
-    }
-    
-    body.custom-cursor .custom-cursor-element {
-      display: block;
-    }
-    
-    .cursor-dot {
-      width: 4px;
-      height: 4px;
-      background: var(--primary-color);
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    
-    .cursor-circle {
-      width: var(--cursor-size);
-      height: var(--cursor-size);
-      border: 1px solid var(--primary-color);
-      border-radius: 50%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      opacity: 0.7;
-    }
-    
-    .cursor-crosshair {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .cursor-crosshair::before,
-    .cursor-crosshair::after {
-      content: '';
-      position: absolute;
-      background: var(--primary-color);
-    }
-    
-    .cursor-crosshair::before {
-      width: 1px;
-      height: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    
-    .cursor-crosshair::after {
-      width: 100%;
-      height: 1px;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-    
-    body.custom-cursor a:hover ~ .custom-cursor-element,
-    body.custom-cursor button:hover ~ .custom-cursor-element,
-    body.custom-cursor .menu-btn:hover ~ .custom-cursor-element,
-    body.custom-cursor .menu-link:hover ~ .custom-cursor-element {
-      transform: scale(1.3);
-    }
-    
+
     html {
       scroll-behavior: smooth;
+      height: 100%;
     }
-    
+
     body {
       margin: 0;
       background: var(--bg-color);
       color: var(--primary-color);
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
       opacity: 0;
       transition: opacity 1s ease, background-color 0.5s ease, color 0.5s ease;
       position: relative;
-      touch-action: manipulation;
+      touch-action: pan-y pinch-zoom; /* разрешаем вертикальный скролл, жесты обработаем сами */
+      perspective: 1000px;
     }
-    
-    body::before {
-      content: "";
+
+    body.loaded {
+      opacity: 1;
+    }
+
+    /* ПАРАЛЛАКС СЛОИ */
+    .parallax-layer {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .layer-1 {
       background: 
-        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px,
-        linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 50px 50px;
-      z-index: -1;
-    }
-    
-    body.loaded { opacity: 1; }
-    .blur { filter: blur(4px); transition: filter 0.4s ease; }
-
-    .back-btn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background: var(--card-bg);
-      color: var(--primary-color);
-      border: 1px solid var(--primary-color);
-      padding: 10px 15px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 1rem;
-      z-index: 1001;
-      transition: all 0.3s;
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 20px 20px,
+        linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 20px 20px;
+      animation: gridMove 20s linear infinite;
+      transform: translateZ(-200px) scale(3);
     }
 
-    .back-btn:hover {
-      background: var(--primary-color);
-      color: var(--bg-color);
+    .layer-2 {
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(120, 120, 120, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(80, 80, 80, 0.1) 0%, transparent 50%);
+      transform: translateZ(-100px) scale(2);
     }
 
-    .coming-soon {
-      text-align: center;
-      font-size: 3rem;
-      margin-top: 40vh;
-      animation: pulse 3s infinite;
-      position: relative;
+    @keyframes gridMove {
+      0% { transform: translateZ(-200px) scale(3) translate(0, 0); }
+      25% { transform: translateZ(-200px) scale(3) translate(-1px, 1px); }
+      50% { transform: translateZ(-200px) scale(3) translate(1px, -1px); }
+      75% { transform: translateZ(-200px) scale(3) translate(-1px, -1px); }
+      100% { transform: translateZ(-200px) scale(3) translate(0, 0); }
     }
 
-    .dots-animation::after {
-      content: '';
-      animation: dots 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.03); }
-    }
-
-    @keyframes dots {
-      0% { content: ''; }
-      25% { content: '.'; }
-      50% { content: '..'; }
-      75% { content: '...'; }
-      100% { content: ''; }
-    }
-
-    /* Стили меню */
-    .burger {
-      position: fixed; 
-      top: 20px; 
-      right: 20px; 
-      width: 30px; 
-      height: 24px;
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between;
-      cursor: pointer; 
-      z-index: 1001;
-    }
-    
-    .burger span {
-      display: block; 
-      height: 4px; 
-      background: var(--primary-color); 
-      border-radius: 2px;
-      transition: all 0.6s ease;
-      transform-origin: center;
-    }
-    
-    .burger.active span:nth-child(1) { 
-      transform: rotate(45deg) translate(6px, 6px); 
-    }
-    
-    .burger.active span:nth-child(2) { 
-      opacity: 0; 
-      transform: translateX(20px);
-    }
-    
-    .burger.active span:nth-child(3) { 
-      transform: rotate(-45deg) translate(6px, -6px); 
-    }
-
-    .menu {
-      position: fixed; 
-      top: 0; 
-      right: -100%; 
-      width: 280px; 
-      height: 100%;
-      background: rgba(0, 0, 0, 0.98); 
-      backdrop-filter: blur(10px);
-      box-shadow: -2px 0 15px rgba(255, 255, 255, 0.1);
-      transition: right 0.6s ease;
-      z-index: 1000;
-      padding: 20px; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 15px;
-      border-left: 1px solid var(--grid-color);
-      overflow-y: auto;
-    }
-    
-    [data-theme="light"] .menu {
-      background: rgba(255, 255, 255, 0.98);
-      box-shadow: -2px 0 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .menu.active { right: 0; }
-    
-    .menu-content {
-      margin-top: 60px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    
-    .menu-btn, .menu-link {
-      color: var(--primary-color); 
-      text-decoration: none; 
-      font-size: 1.1rem;
-      transition: all 0.3s; 
-      background: none; 
-      border: none;
-      text-align: left; 
-      cursor: pointer; 
-      padding: 14px 16px;
-      font-family: inherit;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    
-    .menu-link {
-      display: block;
-    }
-    
-    .menu-btn:hover, .menu-link:hover { 
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    [data-theme="light"] .menu-btn:hover, 
-    [data-theme="light"] .menu-link:hover { 
-      background: rgba(0, 0, 0, 0.1);
-    }
-    
-    .submenu {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.6s ease, opacity 0.6s ease;
-      opacity: 0;
-    }
-
-    .submenu a {
-      font-size: 1rem;
-      padding-left: 25px;
-      color: #ccc;
-      transform: translateX(-8px);
-      opacity: 0;
-      text-decoration: none;
-      padding: 12px 16px;
-      border-radius: 4px;
-      transition: all 0.4s ease;
-      display: flex;
-      align-items: center;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    [data-theme="light"] .submenu a {
-      color: #666;
-    }
-
-    .submenu a:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: #fff;
-    }
-
-    [data-theme="light"] .submenu a:hover {
-      background: rgba(0, 0, 0, 0.05);
-      color: #000;
-    }
-
-    .submenu.show {
-      max-height: 500px;
-      opacity: 1;
-    }
-
-    .submenu.show a {
-      transform: translateX(0);
-      opacity: 1;
-    }
-
-    .submenu.show a:nth-child(1) {
-      transition: transform 0.4s ease 0.05s, opacity 0.4s ease 0.05s, background-color 0.3s ease;
-    }
-    
-    .submenu.show a:nth-child(2) {
-      transition: transform 0.4s ease 0.1s, opacity 0.4s ease 0.1s, background-color 0.3s ease;
-    }
-    
-    .submenu.show a:nth-child(3) {
-      transition: transform 0.4s ease 0.15s, opacity 0.4s ease 0.15s, background-color 0.3s ease;
-    }
-
-    .menu-icon {
-      font-size: 1.1rem;
-      transition: transform 0.4s ease;
-    }
-    
-    .menu-btn.active .menu-icon {
-      transform: rotate(90deg);
-    }
-
-    .menu-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: transparent;
-      z-index: 999;
-    }
-    
-    .menu-overlay.active {
-      display: block;
-    }
-
-    .theme-toggle, .cursor-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-    }
-
-    .theme-toggle-text, .cursor-toggle-text {
-      font-size: 1rem;
-    }
-
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 24px;
-    }
-
-    .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 16px;
-      width: 16px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .toggle-slider {
-      background-color: var(--accent-color);
-    }
-
-    input:checked + .toggle-slider:before {
-      transform: translateX(26px);
-    }
-
-    /* Canvas для системы частиц */
+    /* CANVAS для частиц (динамический фон) */
     #particleCanvas {
       position: fixed;
       top: 0;
@@ -456,373 +108,643 @@
       pointer-events: none;
     }
 
-    @media (max-width: 600px) {
-      .coming-soon { font-size: 2rem; margin-top: 35vh; }
-      
-      .menu-btn, .menu-link {
-        padding: 16px 18px;
-        min-height: 54px;
-      }
-      
-      .submenu a {
-        padding: 14px 18px;
-        min-height: 50px;
-      }
-      
-      .burger {
-        width: 36px;
-        height: 30px;
-      }
+    /* БУРГЕР МЕНЮ (как в index.html) */
+    .burger {
+      position: fixed;
+      top: 10px;
+      right: 15px;
+      width: 30px;
+      height: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      z-index: 1001;
+      transform: translateZ(0);
     }
 
-    @media (hover: none) and (pointer: coarse) {
-      .custom-cursor-element {
-        display: none !important;
-      }
-      
-      body {
-        cursor: default !important;
-      }
+    .burger span {
+      display: block;
+      height: 4px;
+      background: var(--primary-color);
+      border-radius: 2px;
+      transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+      transform-origin: center;
     }
+
+    .burger.active span:nth-child(2) {
+      transform: translateX(100px);
+      opacity: 0;
+    }
+    .burger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+    }
+    .burger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    /* МЕНЮ */
+    .menu {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 280px;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.98);
+      backdrop-filter: blur(10px);
+      box-shadow: -2px 0 15px rgba(255, 255, 255, 0.1);
+      transition: right 0.4s ease;
+      z-index: 1000;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-left: 1px solid var(--grid-color);
+      overflow-y: auto;
+    }
+    [data-theme="light"] .menu {
+      background: rgba(255, 255, 255, 0.98);
+    }
+    .menu.active {
+      right: 0;
+    }
+    .menu-content {
+      margin-top: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .menu-btn, .menu-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-family: inherit;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .menu-btn:hover, .menu-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .submenu {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+      opacity: 0;
+    }
+    .submenu a, .submenu .video-item {
+      font-size: 1rem;
+      padding-left: 25px;
+      color: #ccc;
+      transform: translateX(-8px);
+      opacity: 0;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 4px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+    .submenu.show {
+      max-height: 500px;
+      opacity: 1;
+    }
+    .submenu.show a, .submenu.show .video-item {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .menu-icon {
+      font-size: 1.1rem;
+      transition: transform 0.3s ease;
+    }
+    .menu-btn.active .menu-icon {
+      transform: rotate(90deg);
+    }
+
+    /* ОСНОВНОЙ ПЛЕЕР */
+    .video-gallery {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 100px 20px 80px;
+    }
+    .player-container {
+      max-width: 1000px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(16px);
+      border-radius: 32px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--grid-color);
+    }
+    [data-theme="light"] .player-container {
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 20px;
+      aspect-ratio: 16 / 9;
+    }
+    video, .youtube-iframe {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: pointer;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .control-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: var(--primary-color);
+      font-size: 1.1rem;
+      padding: 8px 14px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.2s;
+      backdrop-filter: blur(4px);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-btn:hover {
+      background: var(--accent-color);
+      color: white;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--accent-color);
+      border-radius: 10px;
+      transition: width 0.1s linear;
+    }
+    .time-display {
+      font-size: 0.9rem;
+      font-family: monospace;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 4px 10px;
+      border-radius: 30px;
+    }
+    .video-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-align: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .back-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--card-bg);
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      padding: 10px 16px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      z-index: 1001;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      padding: 10px 18px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      color: white;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    @media (max-width: 700px) {
+      .controls { flex-direction: column; align-items: stretch; }
+      .control-buttons { justify-content: center; }
+      .ctrl-btn { padding: 8px 12px; font-size: 0.9rem; }
+    }
+    /* Кастомный курсор (опционально) */
+    body.custom-cursor { cursor: none; }
+    .custom-cursor-element {
+      position: fixed;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 9999;
+      mix-blend-mode: difference;
+      display: none;
+    }
+    body.custom-cursor .custom-cursor-element { display: block; }
+    .cursor-dot { width: 4px; height: 4px; background: var(--primary-color); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .cursor-circle { width: 24px; height: 24px; border: 1px solid var(--primary-color); border-radius: 50%; position: absolute; top: 0; left: 0; opacity: 0.6; }
+    @media (hover: none) { .custom-cursor-element { display: none !important; } }
   </style>
 </head>
 <body>
-  <!-- Кастомный курсор -->
-  <div class="custom-cursor-element">
-    <div class="cursor-dot"></div>
-    <div class="cursor-circle"></div>
-    <div class="cursor-crosshair"></div>
-  </div>
-
-  <!-- Система частиц -->
+  <div class="parallax-layer layer-1"></div>
+  <div class="parallax-layer layer-2"></div>
   <canvas id="particleCanvas"></canvas>
-
-  <!-- Кнопка назад -->
+  <div class="custom-cursor-element"><div class="cursor-dot"></div><div class="cursor-circle"></div></div>
   <button class="back-btn" onclick="goBack()">← Назад</button>
-
-  <!-- Оверлей для закрытия меню -->
-  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
-
-  <div class="burger" onclick="toggleMenu()">
-    <span></span><span></span><span></span>
-  </div>
-
+  <div class="burger" id="burgerBtn"><span></span><span></span><span></span></div>
   <div class="menu" id="menu">
     <div class="menu-content">
-      <!-- Папка Мои моменты -->
-      <button class="menu-btn" onclick="toggleSubmenu('momentsSubmenu', this)">
-        📁 Мои моменты
-        <span class="menu-icon">›</span>
-      </button>
-      <div class="submenu" id="momentsSubmenu">
-        <!-- Можно добавить моменты позже -->
-      </div>
-      
-      <!-- Папка Настройки -->
-      <button class="menu-btn" onclick="toggleSubmenu('settingsSubmenu', this)">
-        ⚙️ Настройки
-        <span class="menu-icon">›</span>
-      </button>
+      <button class="menu-btn" id="momentsFolderBtn" onclick="toggleSubmenu('momentsSubmenu', this)">📁 Мои моменты<span class="menu-icon">›</span></button>
+      <div class="submenu" id="momentsSubmenu"></div>
+      <button class="menu-btn" onclick="toggleSubmenu('settingsSubmenu', this)">⚙️ Настройки<span class="menu-icon">›</span></button>
       <div class="submenu" id="settingsSubmenu">
-        <div class="theme-toggle">
-          <span class="theme-toggle-text">Тема:</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="cursor-toggle">
-          <span class="cursor-toggle-text">Прицел-курсор:</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="cursorToggle" onchange="toggleCustomCursor()">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 16px;"><span>Тема:</span><label class="toggle-switch" style="position:relative; width:50px; height:24px;"><input type="checkbox" id="themeToggle"><span style="position:absolute; top:0; left:0; right:0; bottom:0; background:#ccc; border-radius:24px;"></span><span style="position:absolute; width:16px; height:16px; left:4px; bottom:4px; background:white; border-radius:50%; transition:.4s;"></span></label></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 16px;"><span>Прицел-курсор:</span><label class="toggle-switch" style="position:relative; width:50px; height:24px;"><input type="checkbox" id="cursorToggle"><span style="position:absolute; top:0; left:0; right:0; bottom:0; background:#ccc; border-radius:24px;"></span><span style="position:absolute; width:16px; height:16px; left:4px; bottom:4px; background:white; border-radius:50%; transition:.4s;"></span></label></div>
       </div>
     </div>
   </div>
-
-  <div id="main">
-    <div class="coming-soon dots-animation">Coming soon</div>
+  <div class="video-gallery">
+    <div class="player-container">
+      <div class="video-title" id="currentVideoTitle">Загрузка моментов...</div>
+      <div class="video-wrapper" id="videoWrapper">
+        <div id="playerContainer" style="width:100%; height:100%;"></div>
+      </div>
+      <div class="controls">
+        <div class="control-buttons">
+          <button class="ctrl-btn" id="prevBtn">⏮ Пред.</button>
+          <button class="ctrl-btn" id="playPauseBtn">▶ Воспр.</button>
+          <button class="ctrl-btn" id="nextBtn">След. ⏭</button>
+        </div>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+      </div>
+    </div>
   </div>
+  <div class="toast-container" id="toastContainer"></div>
 
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    // Инициализация
-    window.addEventListener('load', () => {
-      document.body.classList.add('loaded');
-      initTheme();
-      initCustomCursor();
-      initParticleSystem();
-    });
+    // ==================== ПЛЕЙЛИСТ ====================
+    // Поддерживаем: объекты с type 'local' (src) или 'youtube' (videoId)
+    const videoLibrary = [
+      { name: "🔥 Клатч 1vs3 (локальный)", type: "local", src: "videos/moment1.mp4" },
+      { name: "🎥 Демо YouTube (замени на свои)", type: "youtube", videoId: "GEHej0FyknI" },  // Ваш пример
+      { name: "💥 4K на Mirage", type: "local", src: "videos/moment4.mp4" },
+      { name: "🎯 AWP трипл", type: "local", src: "videos/moment2.mp4" }
+    ];
+    // Для демо, если локальных видео нет, добавляем тестовое (из интернета)
+    if (videoLibrary.length === 0) videoLibrary.push({ name: "Демо момент", type: "local", src: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" });
 
-    // ==================== КАСТОМНЫЙ КУРСОР ====================
-    function initCustomCursor() {
-      const savedCursor = localStorage.getItem('customCursor') || 'enabled';
-      document.getElementById('cursorToggle').checked = savedCursor === 'enabled';
-      toggleCustomCursor(savedCursor === 'enabled');
+    let currentIndex = 0;
+    let currentPlayer = null;       // либо HTMLVideoElement, либо YouTube Player
+    let playerType = null;          // 'local' или 'youtube'
+    let isPlaying = false;
+    let ytPlayer = null;            // объект YouTube Player
+    let audioContext = null;
+    let mediaSource = null;
+    let analyser = null;
+    let animationFrame = null;
+    let volumeLevel = 0;            // 0..1
+
+    // DOM элементы
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const titleElem = document.getElementById('currentVideoTitle');
+    const playerContainer = document.getElementById('playerContainer');
+
+    // ==================== Утилиты ====================
+    function showToast(msg, type = 'info', duration = 2500) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, duration);
     }
 
-    function toggleCustomCursor(forceState) {
-      const isEnabled = forceState !== undefined ? forceState : document.getElementById('cursorToggle').checked;
-      
-      if (isEnabled) {
-        document.body.classList.add('custom-cursor');
-        localStorage.setItem('customCursor', 'enabled');
-      } else {
-        document.body.classList.remove('custom-cursor');
-        localStorage.setItem('customCursor', 'disabled');
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return "0:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // ==================== Аудио-анализ (реакция на громкость) ====================
+    async function connectAudioAnalyzer(videoElement) {
+      if (!videoElement) return;
+      if (audioContext) {
+        await audioContext.close();
+        audioContext = null;
       }
+      if (mediaSource) mediaSource.disconnect();
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        mediaSource = audioContext.createMediaElementSource(videoElement);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 32;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        mediaSource.connect(analyser);
+        analyser.connect(audioContext.destination);
+        if (audioContext.state === 'suspended') await audioContext.resume();
+        const updateVolume = () => {
+          if (!analyser) return;
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          volumeLevel = Math.min(1, sum / (dataArray.length * 255) * 1.5);
+          requestAnimationFrame(updateVolume);
+        };
+        updateVolume();
+      } catch (e) { console.warn("AudioContext error:", e); volumeLevel = 0.3; }
     }
 
-    // Движение кастомного курсора
-    document.addEventListener('mousemove', (e) => {
-      if (document.body.classList.contains('custom-cursor')) {
-        const cursor = document.querySelector('.custom-cursor-element');
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
-      }
-    });
-
-    // Скрытие курсора при выходе за пределы окна
-    document.addEventListener('mouseout', (e) => {
-      if (e.relatedTarget === null) {
-        document.querySelector('.custom-cursor-element').style.opacity = '0';
-      }
-    });
-
-    document.addEventListener('mouseover', () => {
-      document.querySelector('.custom-cursor-element').style.opacity = '1';
-    });
-
-    // ==================== ТЕМА ====================
-    function initTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      document.body.setAttribute('data-theme', savedTheme);
-      document.getElementById('themeToggle').checked = savedTheme === 'light';
-    }
-
-    function toggleTheme() {
-      const isLightTheme = document.getElementById('themeToggle').checked;
-      const newTheme = isLightTheme ? 'light' : 'dark';
-      
-      document.body.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
-
-    // ==================== ФУНКЦИИ МЕНЮ ====================
-    function toggleMenu() {
-      const burger = document.querySelector('.burger');
-      const menu = document.getElementById('menu');
-      const main = document.getElementById('main');
-      const overlay = document.getElementById('menuOverlay');
-      
-      burger.classList.toggle('active');
-      menu.classList.toggle('active');
-      main.classList.toggle('blur');
-      overlay.classList.toggle('active');
-    }
-
-    function closeMenu() {
-      const burger = document.querySelector('.burger');
-      const menu = document.getElementById('menu');
-      const main = document.getElementById('main');
-      const overlay = document.getElementById('menuOverlay');
-      
-      menu.style.transition = 'right 0.6s ease';
-      
-      burger.classList.remove('active');
-      menu.classList.remove('active');
-      main.classList.remove('blur');
-      overlay.classList.remove('active');
-      
-      closeAllSubmenus();
-    }
-
-    function closeAllSubmenus() {
-      document.querySelectorAll('.submenu').forEach(menu => {
-        menu.classList.remove('show');
-      });
-      
-      document.querySelectorAll('.menu-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-    }
-
-    function toggleSubmenu(submenuId, button) {
-      const submenu = document.getElementById(submenuId);
-      const isShowing = submenu.classList.contains('show');
-      
-      closeAllSubmenus();
-      
-      if (!isShowing) {
-        submenu.classList.add('show');
-        button.classList.add('active');
-      }
-    }
-
-    // Функция для возврата назад
-    function goBack() {
-      window.history.back();
-    }
-
-    // ==================== СИСТЕМА ЧАСТИЦ ====================
-    function initParticleSystem() {
+    // ==================== Частицы с реакцией на громкость ====================
+    function initSoundReactiveParticles() {
       const canvas = document.getElementById('particleCanvas');
+      if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let particles = [];
-      const mouse = { x: 0, y: 0, radius: 100 };
-
-      function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-
+      const mouse = { x: 0, y: 0, radius: 120 };
+      function resize() { canvas.width = window.innerWidth; canvas.height = Math.max(document.body.scrollHeight, window.innerHeight); }
       class Particle {
         constructor() {
           this.x = Math.random() * canvas.width;
           this.y = Math.random() * canvas.height;
-          this.size = Math.random() * 2 + 0.5;
+          this.size = Math.random() * 2 + 1;
           this.speedX = (Math.random() - 0.5) * 0.5;
           this.speedY = (Math.random() - 0.5) * 0.5;
           this.hue = Math.random() * 360;
-          this.pulse = Math.random() * Math.PI * 2;
-          this.pulseSpeed = Math.random() * 0.02 + 0.01;
           this.baseSize = this.size;
         }
-
-        update() {
+        update(vol) {
           this.x += this.speedX;
           this.y += this.speedY;
-
-          // Wrap around edges
           if (this.x < 0) this.x = canvas.width;
           if (this.x > canvas.width) this.x = 0;
           if (this.y < 0) this.y = canvas.height;
           if (this.y > canvas.height) this.y = 0;
-
-          // Mouse interaction
-          const dx = this.x - mouse.x;
-          const dy = this.y - mouse.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < mouse.radius) {
-            const force = (mouse.radius - distance) / mouse.radius;
+          const dx = this.x - mouse.x, dy = this.y - mouse.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < mouse.radius) {
+            const force = (mouse.radius - dist) / mouse.radius;
             const angle = Math.atan2(dy, dx);
-            this.x += Math.cos(angle) * force * 2;
-            this.y += Math.sin(angle) * force * 2;
-            // Изменение цвета при наведении
-            this.hue = (this.hue + 5) % 360;
+            this.x += Math.cos(angle) * force * 1.8;
+            this.y += Math.sin(angle) * force * 1.8;
           }
-
-          // Пульсация
-          this.pulse += this.pulseSpeed;
-          this.size = this.baseSize * (Math.sin(this.pulse) * 0.3 + 1);
+          // реакция на громкость: размер частиц пульсирует
+          const volumeFactor = 1 + vol * 2;
+          this.size = this.baseSize * (0.6 + volumeFactor * 0.6);
         }
-
         draw() {
           ctx.beginPath();
           ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-          
-          // Адаптация цвета частиц к теме
-          const currentTheme = document.body.getAttribute('data-theme');
-          if (currentTheme === 'light') {
-            // Для светлой темы делаем частицы более темными и контрастными
-            ctx.fillStyle = `hsla(${this.hue}, 80%, 20%, ${0.4 + Math.sin(this.pulse) * 0.2})`;
-          } else {
-            // Для темной темы оставляем яркие цвета
-            ctx.fillStyle = `hsla(${this.hue}, 70%, 60%, ${0.3 + Math.sin(this.pulse) * 0.2})`;
-          }
-          
+          const theme = document.body.getAttribute('data-theme');
+          const alpha = theme === 'light' ? 0.6 : 0.4 + volumeLevel * 0.3;
+          ctx.fillStyle = `hsla(${this.hue + volumeLevel * 50}, 75%, 60%, ${alpha})`;
           ctx.fill();
         }
       }
-
-      function init() {
-        resize();
-        particles = [];
-        for (let i = 0; i < 80; i++) {
-          particles.push(new Particle());
-        }
-      }
-
+      function initParticles() { particles = []; for (let i = 0; i < 120; i++) particles.push(new Particle()); }
       function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Update and draw particles
-        particles.forEach(particle => {
-          particle.update();
-          particle.draw();
-        });
-
-        // Draw connections
-        drawConnections();
-        requestAnimationFrame(animate);
-      }
-
-      function drawConnections() {
+        particles.forEach(p => { p.update(volumeLevel); p.draw(); });
+        // соединительные линии
         for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
+          for (let j = i+1; j < particles.length; j++) {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < 120) {
-              const alpha = 0.1 * (1 - distance/120);
-              
-              // Адаптация цвета соединений к теме
-              const currentTheme = document.body.getAttribute('data-theme');
-              let strokeColor;
-              if (currentTheme === 'light') {
-                // Более темные и контрастные соединения для светлой темы
-                strokeColor = `hsla(${(particles[i].hue + particles[j].hue) / 2}, 80%, 20%, ${alpha * 1.5})`;
-              } else {
-                strokeColor = `hsla(${(particles[i].hue + particles[j].hue) / 2}, 70%, 60%, ${alpha})`;
-              }
-              
+            const dist = Math.hypot(dx, dy);
+            if (dist < 100) {
               ctx.beginPath();
-              ctx.strokeStyle = strokeColor;
-              ctx.lineWidth = 0.5;
+              const alpha = 0.08 * (1 - dist/100) * (0.5 + volumeLevel);
+              ctx.strokeStyle = `hsla(${(particles[i].hue + particles[j].hue)/2}, 70%, 60%, ${alpha})`;
+              ctx.lineWidth = 0.6;
               ctx.moveTo(particles[i].x, particles[i].y);
               ctx.lineTo(particles[j].x, particles[j].y);
               ctx.stroke();
             }
           }
         }
+        requestAnimationFrame(animate);
       }
-
-      // Event listeners
-      window.addEventListener('resize', resize);
-      canvas.addEventListener('mousemove', (e) => {
-        mouse.x = e.clientX;
-        mouse.y = e.clientY;
-      });
-
-      // Touch support for mobile
-      canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        mouse.x = touch.clientX;
-        mouse.y = touch.clientY;
-      }, { passive: false });
-
-      // Initialize and start animation
-      init();
-      animate();
+      window.addEventListener('resize', () => { resize(); initParticles(); });
+      canvas.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+      resize(); initParticles(); animate();
     }
 
-    // Закрытие по ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeMenu();
+    // ==================== Управление плеером ====================
+    function destroyCurrentPlayer() {
+      if (ytPlayer && typeof ytPlayer.destroy === 'function') ytPlayer.destroy();
+      ytPlayer = null;
+      if (currentPlayer && currentPlayer.pause) currentPlayer.pause();
+      playerContainer.innerHTML = '';
+      if (audioContext) { audioContext.close().catch(e=>{}); audioContext = null; }
+    }
+
+    function loadVideo(index) {
+      if (!videoLibrary[index]) { showToast("Момент не найден", "error"); return false; }
+      destroyCurrentPlayer();
+      const item = videoLibrary[index];
+      titleElem.innerText = item.name;
+      currentIndex = index;
+      if (item.type === 'youtube' && item.videoId) {
+        playerType = 'youtube';
+        const iframeDiv = document.createElement('div');
+        iframeDiv.id = 'youtubePlayer';
+        iframeDiv.style.width = '100%';
+        iframeDiv.style.height = '100%';
+        playerContainer.appendChild(iframeDiv);
+        // инициализация YouTube плеера
+        if (window.YT && YT.Player) {
+          ytPlayer = new YT.Player('youtubePlayer', {
+            videoId: item.videoId,
+            playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
+            events: {
+              onReady: (event) => {
+                currentPlayer = event.target;
+                isPlaying = false;
+                playPauseBtn.innerHTML = '▶ Воспр.';
+                updateTimeForYouTube();
+                // Для YouTube используем имитацию громкости (рандомная пульсация)
+                setInterval(() => { if (playerType === 'youtube' && isPlaying) volumeLevel = 0.2 + Math.random() * 0.5; else if(!isPlaying) volumeLevel = 0.1; }, 200);
+              },
+              onStateChange: (e) => {
+                if (e.data === YT.PlayerState.PLAYING) { isPlaying = true; playPauseBtn.innerHTML = '⏸ Пауза'; }
+                else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) { isPlaying = false; playPauseBtn.innerHTML = '▶ Воспр.'; }
+                if (e.data === YT.PlayerState.ENDED) nextVideo();
+              }
+            }
+          });
+        } else {
+          showToast("YouTube API не загружен, попробуйте обновить", "error");
+          return false;
+        }
+      } else {
+        playerType = 'local';
+        const videoElem = document.createElement('video');
+        videoElem.className = 'local-video';
+        videoElem.src = item.src;
+        videoElem.preload = 'metadata';
+        videoElem.style.width = '100%';
+        videoElem.style.height = '100%';
+        playerContainer.appendChild(videoElem);
+        currentPlayer = videoElem;
+        isPlaying = false;
+        playPauseBtn.innerHTML = '▶ Воспр.';
+        videoElem.addEventListener('loadedmetadata', () => { updateTimeDisplay(); });
+        videoElem.addEventListener('timeupdate', () => { updateProgressAndTime(); });
+        videoElem.addEventListener('ended', () => nextVideo());
+        videoElem.addEventListener('play', () => { isPlaying = true; playPauseBtn.innerHTML = '⏸ Пауза'; });
+        videoElem.addEventListener('pause', () => { isPlaying = false; playPauseBtn.innerHTML = '▶ Воспр.'; });
+        // Подключаем аудиоанализ для громкости
+        videoElem.addEventListener('canplay', () => { connectAudioAnalyzer(videoElem); });
+        if (videoElem.readyState >= 2) connectAudioAnalyzer(videoElem);
+        else videoElem.addEventListener('canplay', () => connectAudioAnalyzer(videoElem), { once: true });
+      }
+      return true;
+    }
+
+    function updateProgressAndTime() {
+      if (!currentPlayer || playerType !== 'local') return;
+      const dur = currentPlayer.duration;
+      const cur = currentPlayer.currentTime;
+      if (!isNaN(dur) && dur !== Infinity) {
+        progressFill.style.width = (cur / dur) * 100 + '%';
+        timeDisplay.innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+      }
+    }
+    function updateTimeForYouTube() {
+      if (!ytPlayer || playerType !== 'youtube') return;
+      const interval = setInterval(() => {
+        if (playerType === 'youtube' && ytPlayer && ytPlayer.getCurrentTime) {
+          const cur = ytPlayer.getCurrentTime();
+          const dur = ytPlayer.getDuration();
+          if (dur) {
+            progressFill.style.width = (cur / dur) * 100 + '%';
+            timeDisplay.innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+          }
+        } else clearInterval(interval);
+      }, 250);
+      window._ytInterval = interval;
+    }
+    function togglePlayPause() {
+      if (!currentPlayer) return;
+      if (playerType === 'local') {
+        if (isPlaying) currentPlayer.pause();
+        else currentPlayer.play();
+      } else if (playerType === 'youtube' && ytPlayer) {
+        if (isPlaying) ytPlayer.pauseVideo();
+        else ytPlayer.playVideo();
+      }
+    }
+    function nextVideo() { let next = (currentIndex + 1) % videoLibrary.length; loadVideo(next); }
+    function prevVideo() { let prev = (currentIndex - 1 + videoLibrary.length) % videoLibrary.length; loadVideo(prev); }
+
+    // ==================== Полноэкранный режим (клавиша F) ====================
+    function toggleFullscreen() {
+      const container = document.querySelector('.video-wrapper');
+      if (!container) return;
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => showToast(`Ошибка fullscreen: ${err}`, 'error'));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // ==================== Жесты (свайп) ====================
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const wrapper = document.querySelector('.video-wrapper');
+    wrapper.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+    wrapper.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchEndX - touchStartX;
+      if (Math.abs(diff) > 60) {
+        if (diff > 0) prevVideo();
+        else nextVideo();
+        showToast(diff > 0 ? '← Предыдущий' : 'Следующий →', 'info', 1000);
       }
     });
 
-    // Автоматическое отключение курсора на тач-устройствах
-    if ('ontouchstart' in window || navigator.maxTouchPoints) {
-      document.body.classList.remove('custom-cursor');
-      document.getElementById('cursorToggle').checked = false;
-      localStorage.setItem('customCursor', 'disabled');
-    }
+    // ==================== Меню, тема, курсор ====================
+    function toggleMenu() { document.getElementById('burgerBtn').classList.toggle('active'); document.getElementById('menu').classList.toggle('active'); }
+    function closeMenu() { document.getElementById('burgerBtn').classList.remove('active'); document.getElementById('menu').classList.remove('active'); document.querySelectorAll('.submenu').forEach(s=>s.classList.remove('show')); document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active')); }
+    function toggleSubmenu(id, btn) { const sub = document.getElementById(id); const show = sub.classList.contains('show'); closeAllSubmenus(); if (!show) { sub.classList.add('show'); btn.classList.add('active'); } }
+    function closeAllSubmenus() { document.querySelectorAll('.submenu').forEach(s=>s.classList.remove('show')); document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active')); }
+    function initTheme() { const saved = localStorage.getItem('theme') || 'dark'; document.body.setAttribute('data-theme', saved); document.getElementById('themeToggle').checked = saved === 'light'; }
+    function toggleTheme() { const isLight = document.getElementById('themeToggle').checked; document.body.setAttribute('data-theme', isLight ? 'light' : 'dark'); localStorage.setItem('theme', isLight ? 'light' : 'dark'); }
+    function initCursor() { const enabled = localStorage.getItem('customCursor') !== 'disabled'; document.getElementById('cursorToggle').checked = enabled; if (enabled) document.body.classList.add('custom-cursor'); else document.body.classList.remove('custom-cursor'); document.getElementById('cursorToggle').addEventListener('change', (e) => { if(e.target.checked) { document.body.classList.add('custom-cursor'); localStorage.setItem('customCursor','enabled'); } else { document.body.classList.remove('custom-cursor'); localStorage.setItem('customCursor','disabled'); } }); }
+    document.addEventListener('mousemove', (e) => { if(document.body.classList.contains('custom-cursor')) { const cur = document.querySelector('.custom-cursor-element'); if(cur) { cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px'; } } });
+    function buildMomentsSubmenu() { const container = document.getElementById('momentsSubmenu'); container.innerHTML = ''; videoLibrary.forEach((v,i) => { const div = document.createElement('div'); div.className = 'video-item'; div.innerHTML = `🎬 ${v.name}`; div.onclick = () => { loadVideo(i); if(document.getElementById('menu').classList.contains('active')) toggleMenu(); setTimeout(()=>togglePlayPause(), 300); }; container.appendChild(div); }); }
+
+    window.addEventListener('load', () => {
+      document.body.classList.add('loaded');
+      initTheme(); initCursor(); buildMomentsSubmenu(); initSoundReactiveParticles();
+      document.getElementById('themeToggle').addEventListener('change', toggleTheme);
+      document.getElementById('burgerBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+      document.addEventListener('click', (e) => { const menu=document.getElementById('menu'); if(menu.classList.contains('active') && !menu.contains(e.target) && !document.getElementById('burgerBtn').contains(e.target)) closeMenu(); });
+      playPauseBtn.addEventListener('click', togglePlayPause);
+      prevBtn.addEventListener('click', prevVideo);
+      nextBtn.addEventListener('click', nextVideo);
+      progressBar.addEventListener('click', (e) => { if(playerType==='local' && currentPlayer) { const rect=progressBar.getBoundingClientRect(); const percent=(e.clientX-rect.left)/rect.width; currentPlayer.currentTime=percent*currentPlayer.duration; } else if(playerType==='youtube' && ytPlayer) { const rect=progressBar.getBoundingClientRect(); const percent=(e.clientX-rect.left)/rect.width; const dur=ytPlayer.getDuration(); if(dur) ytPlayer.seekTo(percent*dur, true); } });
+      document.addEventListener('keydown', (e) => { if(e.code === 'KeyF') { e.preventDefault(); toggleFullscreen(); } if(e.code === 'Space') { e.preventDefault(); togglePlayPause(); } if(e.code === 'ArrowRight') nextVideo(); if(e.code === 'ArrowLeft') prevVideo(); });
+      loadVideo(0);
+    });
+    function goBack() { window.history.back(); }
   </script>
 </body>
 </html>
